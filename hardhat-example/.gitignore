@@ -21,3 +21,6 @@
 
 # Env files
 .env
+
+# Hardhat deployment files
+/ignition/deployments
