@@ -316,7 +316,9 @@ export const switchToSepolia = async (): Promise<void> => {
  */
 export const onAccountsChanged = (callback: (accounts: string[]) => void): void => {
   if (window.ethereum) {
-    window.ethereum.on("accountsChanged", callback);
+    window.ethereum.on("accountsChanged", (accounts: unknown) => {
+      callback(accounts as string[]);
+    });
   }
 };
 
@@ -325,7 +327,9 @@ export const onAccountsChanged = (callback: (accounts: string[]) => void): void 
  */
 export const onChainChanged = (callback: (chainId: string) => void): void => {
   if (window.ethereum) {
-    window.ethereum.on("chainChanged", callback);
+    window.ethereum.on("chainChanged", (chainId: unknown) => {
+      callback(chainId as string);
+    });
   }
 };
 
@@ -334,7 +338,9 @@ export const onChainChanged = (callback: (chainId: string) => void): void => {
  */
 export const removeAccountsChangedListener = (callback: (accounts: string[]) => void): void => {
   if (window.ethereum) {
-    window.ethereum.removeListener("accountsChanged", callback);
+    window.ethereum.removeListener("accountsChanged", (accounts: unknown) => {
+      callback(accounts as string[]);
+    });
   }
 };
 
@@ -343,7 +349,9 @@ export const removeAccountsChangedListener = (callback: (accounts: string[]) => 
  */
 export const removeChainChangedListener = (callback: (chainId: string) => void): void => {
   if (window.ethereum) {
-    window.ethereum.removeListener("chainChanged", callback);
+    window.ethereum.removeListener("chainChanged", (chainId: unknown) => {
+      callback(chainId as string);
+    });
   }
 };
 
