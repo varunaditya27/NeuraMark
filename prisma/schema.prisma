@@ -1,0 +1,29 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Proof {
+  id          String   @id @default(cuid())
+  proofId     String   @unique
+  wallet      String
+  modelInfo   String
+  promptHash  String
+  outputHash  String
+  promptCID   String
+  outputCID   String
+  txHash      String
+  createdAt   DateTime @default(now())
+
+  @@index([wallet])
+  @@index([proofId])
+  @@index([createdAt])
+}
