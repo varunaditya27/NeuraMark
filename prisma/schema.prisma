@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,16 +9,16 @@ datasource db {
 }
 
 model Proof {
-  id          String   @id @default(cuid())
-  proofId     String   @unique
-  wallet      String
-  modelInfo   String
-  promptHash  String
-  outputHash  String
-  promptCID   String
-  outputCID   String
-  txHash      String
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  proofId    String   @unique
+  wallet     String
+  modelInfo  String
+  promptHash String
+  outputHash String
+  promptCID  String
+  outputCID  String
+  txHash     String
+  createdAt  DateTime @default(now())
 
   @@index([wallet])
   @@index([proofId])
