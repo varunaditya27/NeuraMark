@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Upload, Loader2, CheckCircle2, AlertCircle, FileText, Zap, X } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
 import { getAccount, isMetaMaskInstalled, hashText } from "@/lib/ethersClient";
@@ -124,10 +123,7 @@ export default function RegisterPage() {
 
     try {
       // Dynamic import to avoid SSR issues
-      const { registerProof, storeProof } = await import("@/lib/ethersClient").then(m => ({
-        registerProof: m.registerProof,
-        storeProof: () => import("@/lib/prisma").then(p => p.storeProof)
-      }));
+      const { registerProof } = await import("@/lib/ethersClient");
 
       // Step 1: Hash content
       updateStepStatus(1, "active");
@@ -137,11 +133,13 @@ export default function RegisterPage() {
       if (outputType === "text") {
         outputHash = hashText(output);
       } else {
-        // For images, hash the file content
+        // For images, hash the file content using the same method as text
+        // First convert the file to a readable string representation (base64)
         const arrayBuffer = await imageFile!.arrayBuffer();
-        const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        outputHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const bytes = new Uint8Array(arrayBuffer);
+        // Use ethers to hash the bytes consistently
+        const { ethers } = await import("ethers");
+        outputHash = ethers.keccak256(bytes);
       }
       
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -205,18 +203,31 @@ export default function RegisterPage() {
 
       // Step 4: Store in database
       updateStepStatus(4, "active");
-      const storeProofFn = await storeProof();
-      await storeProofFn({
-        proofId: blockchainResult.proofId,
-        wallet: currentAccount!,
-        modelInfo,
-        promptHash,
-        outputHash,
-        promptCID,
-        outputCID,
-        outputType,
-        txHash: blockchainResult.txHash,
+      const storeResponse = await fetch("/api/store-proof", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proofId: blockchainResult.proofId,
+          wallet: currentAccount!,
+          modelInfo,
+          promptHash,
+          outputHash,
+          promptCID,
+          outputCID,
+          outputType,
+          txHash: blockchainResult.txHash,
+        }),
       });
+
+      if (!storeResponse.ok) {
+        const errorData = await storeResponse.json();
+        throw new Error(errorData.error || "Failed to store proof in database");
+      }
+
+      const storeData = await storeResponse.json();
+      console.log("✅ Proof stored in database:", storeData);
       updateStepStatus(4, "completed");
 
       setTxHash(blockchainResult.txHash);
