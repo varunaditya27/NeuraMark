@@ -14,6 +14,7 @@ interface VerifiedProof {
   outputHash: string;
   promptCID: string;
   outputCID: string;
+  outputType: string;
   txHash: string;
   timestamp: string;
 }
@@ -251,7 +252,9 @@ export default function VerifyPage() {
                       whileTap={{ scale: 0.98 }}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-teal-500/20 border border-teal-500/30 text-teal-400 hover:bg-teal-500/30 transition-colors"
                     >
-                      <span className="font-medium">View Output</span>
+                      <span className="font-medium">
+                        View {verifiedProof.outputType === "image" ? "Image" : "Output"}
+                      </span>
                       <ExternalLink className="w-4 h-4" />
                     </motion.a>
                   </div>

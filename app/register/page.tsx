@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Upload, Loader2, CheckCircle2, AlertCircle, FileText, Zap } from "lucide-react";
+import { Upload, Loader2, CheckCircle2, AlertCircle, FileText, Zap, X } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
 import { getAccount, isMetaMaskInstalled, hashText } from "@/lib/ethersClient";
 
@@ -24,6 +24,9 @@ export default function RegisterPage() {
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
   const [modelInfo, setModelInfo] = useState("");
+  const [outputType, setOutputType] = useState<"text" | "image">("text");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -62,6 +65,35 @@ export default function RegisterPage() {
     );
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setError("Please upload a valid image file");
+        return;
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image size should be less than 10MB");
+        return;
+      }
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
   const handleRegisterProof = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -70,8 +102,18 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!prompt.trim() || !output.trim() || !modelInfo.trim()) {
-      setError("All fields are required");
+    if (!prompt.trim() || !modelInfo.trim()) {
+      setError("Prompt and model info are required");
+      return;
+    }
+
+    if (outputType === "text" && !output.trim()) {
+      setError("Please enter the AI output text");
+      return;
+    }
+
+    if (outputType === "image" && !imageFile) {
+      setError("Please upload an AI-generated image");
       return;
     }
 
@@ -81,32 +123,63 @@ export default function RegisterPage() {
 
     try {
       // Dynamic import to avoid SSR issues
-      const { registerProof, storeProof } = await import("@/lib/ethersClient").then(m => ({
-        registerProof: m.registerProof,
-        storeProof: () => import("@/lib/prisma").then(p => p.storeProof)
-      }));
+      const { registerProof } = await import("@/lib/ethersClient");
 
       // Step 1: Hash content
       updateStepStatus(1, "active");
       const promptHash = hashText(prompt);
-      const outputHash = hashText(output);
+      let outputHash: string;
+      
+      if (outputType === "text") {
+        outputHash = hashText(output);
+      } else {
+        // For images, hash the file content using the same method as text
+        // First convert the file to a readable string representation (base64)
+        const arrayBuffer = await imageFile!.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        // Use ethers to hash the bytes consistently
+        const { ethers } = await import("ethers");
+        outputHash = ethers.keccak256(bytes);
+      }
+      
       await new Promise((resolve) => setTimeout(resolve, 500));
       updateStepStatus(1, "completed");
 
       // Step 2: Upload to IPFS
       updateStepStatus(2, "active");
-      const uploadResponse = await fetch("/api/register-proof", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          output,
-          modelInfo,
-          promptHash,
-          outputHash,
-          wallet: currentAccount,
-        }),
-      });
+      
+      let uploadResponse: Response;
+      
+      if (outputType === "text") {
+        uploadResponse = await fetch("/api/register-proof", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt,
+            output,
+            outputType: "text",
+            modelInfo,
+            promptHash,
+            outputHash,
+            wallet: currentAccount,
+          }),
+        });
+      } else {
+        // Upload image using FormData
+        const formData = new FormData();
+        formData.append("prompt", prompt);
+        formData.append("outputType", "image");
+        formData.append("imageFile", imageFile!);
+        formData.append("modelInfo", modelInfo);
+        formData.append("promptHash", promptHash);
+        formData.append("outputHash", outputHash);
+        formData.append("wallet", currentAccount!);
+        
+        uploadResponse = await fetch("/api/register-proof", {
+          method: "POST",
+          body: formData,
+        });
+      }
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
@@ -130,17 +203,31 @@ export default function RegisterPage() {
 
       // Step 4: Store in database
       updateStepStatus(4, "active");
-      const storeProofFn = await storeProof();
-      await storeProofFn({
-        proofId: blockchainResult.proofId,
-        wallet: currentAccount!,
-        modelInfo,
-        promptHash,
-        outputHash,
-        promptCID,
-        outputCID,
-        txHash: blockchainResult.txHash,
+      const storeResponse = await fetch("/api/store-proof", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proofId: blockchainResult.proofId,
+          wallet: currentAccount!,
+          modelInfo,
+          promptHash,
+          outputHash,
+          promptCID,
+          outputCID,
+          outputType,
+          txHash: blockchainResult.txHash,
+        }),
       });
+
+      if (!storeResponse.ok) {
+        const errorData = await storeResponse.json();
+        throw new Error(errorData.error || "Failed to store proof in database");
+      }
+
+      const storeData = await storeResponse.json();
+      console.log("✅ Proof stored in database:", storeData);
       updateStepStatus(4, "completed");
 
       setTxHash(blockchainResult.txHash);
@@ -229,20 +316,107 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                {/* Output Input */}
+                {/* Output Type Toggle */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    AI Output <span className="text-red-400">*</span>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    AI Output Type <span className="text-red-400">*</span>
                   </label>
-                  <textarea
-                    value={output}
-                    onChange={(e) => setOutput(e.target.value)}
-                    placeholder="Paste the AI-generated output here..."
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
-                    rows={6}
-                    disabled={loading}
-                  />
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOutputType("text");
+                        removeImage();
+                      }}
+                      disabled={loading}
+                      className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+                        outputType === "text"
+                          ? "bg-indigo-500/20 border-2 border-indigo-500 text-indigo-300"
+                          : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/20"
+                      }`}
+                    >
+                      📝 Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOutputType("image");
+                        setOutput("");
+                      }}
+                      disabled={loading}
+                      className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+                        outputType === "image"
+                          ? "bg-indigo-500/20 border-2 border-indigo-500 text-indigo-300"
+                          : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/20"
+                      }`}
+                    >
+                      🖼️ Image
+                    </button>
+                  </div>
                 </div>
+
+                {/* Text Output Input */}
+                {outputType === "text" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      AI Output <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      value={output}
+                      onChange={(e) => setOutput(e.target.value)}
+                      placeholder="Paste the AI-generated output here..."
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                      rows={6}
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+
+                {/* Image Output Upload */}
+                {outputType === "image" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      AI-Generated Image <span className="text-red-400">*</span>
+                    </label>
+                    {!imagePreview ? (
+                      <label className="block">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          disabled={loading}
+                          className="hidden"
+                        />
+                        <div className="cursor-pointer w-full px-4 py-8 rounded-xl bg-white/5 border-2 border-dashed border-white/10 hover:border-indigo-500/50 transition-all text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                              <FileText className="w-6 h-6 text-indigo-400" />
+                            </div>
+                            <p className="text-gray-400">Click to upload image</p>
+                            <p className="text-xs text-gray-500">PNG, JPG, WEBP up to 10MB</p>
+                          </div>
+                        </div>
+                      </label>
+                    ) : (
+                      <div className="relative rounded-xl overflow-hidden bg-white/5 border border-white/10">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imagePreview}
+                          alt="AI Generated Image Preview"
+                          className="w-full h-auto max-h-96 object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          disabled={loading}
+                          className="absolute top-2 right-2 p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Model Info */}
                 <div>

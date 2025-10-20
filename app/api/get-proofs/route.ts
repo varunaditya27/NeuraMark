@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         outputHash: proof.outputHash,
         promptCID: proof.promptCID,
         outputCID: proof.outputCID,
+        outputType: proof.outputType,
         txHash: proof.txHash,
         createdAt: proof.createdAt.toISOString(),
       })),

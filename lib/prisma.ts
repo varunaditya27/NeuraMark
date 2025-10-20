@@ -25,6 +25,7 @@ export interface ProofRecord {
   outputHash: string;
   promptCID: string;
   outputCID: string;
+  outputType: string;
   txHash: string;
   createdAt: Date;
 }
@@ -40,6 +41,7 @@ export async function storeProof(proofData: {
   outputHash: string;
   promptCID: string;
   outputCID: string;
+  outputType: string;
   txHash: string;
 }): Promise<ProofRecord> {
   try {
