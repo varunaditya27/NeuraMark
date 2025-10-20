@@ -15,6 +15,7 @@ interface ProofCardProps {
     outputHash: string;
     promptCID: string;
     outputCID: string;
+    outputType: string;
     txHash: string;
     createdAt: Date | string;
   };
@@ -111,7 +112,7 @@ export default function ProofCard({ proof }: ProofCardProps) {
             whileTap={{ scale: 0.95 }}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-teal-500/20 border border-teal-500/30 text-teal-400 hover:bg-teal-500/30 transition-colors text-sm font-medium"
           >
-            <span>View Output</span>
+            <span>View {proof.outputType === "image" ? "Image" : "Output"}</span>
             <ExternalLink className="w-4 h-4" />
           </motion.a>
         </div>
