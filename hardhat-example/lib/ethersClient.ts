@@ -302,7 +302,7 @@ export const switchToSepolia = async (): Promise<void> => {
                 symbol: "ETH",
                 decimals: 18,
               },
-              rpcUrls: ["https://sepolia.infura.io/v3/"],
+              rpcUrls: ["https://ethereum-sepolia.publicnode.com"],
               blockExplorerUrls: ["https://sepolia.etherscan.io"],
             },
           ],
