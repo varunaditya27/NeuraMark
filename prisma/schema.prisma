@@ -17,6 +17,7 @@ model Proof {
   outputHash String
   promptCID  String
   outputCID  String
+  outputType String   @default("text") // "text" or "image"
   txHash     String
   createdAt  DateTime @default(now())
 
