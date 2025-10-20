@@ -70,7 +70,7 @@
 ### Live Application
 
 🌐 **Frontend**: [Your deployed URL here]  
-⚙️ **Smart Contract**: [`0x6F20CFA1223818e4C00Fa1992557fe95757E3877`](https://sepolia.etherscan.io/address/0x6F20CFA1223818e4C00Fa1992557fe95757E3877)  
+⚙️ **Smart Contract**: [`0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795`](https://sepolia.etherscan.io/address/0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795)  
 🔗 **Network**: Sepolia Testnet
 
 ### Screenshots
