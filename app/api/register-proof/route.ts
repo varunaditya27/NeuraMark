@@ -5,13 +5,49 @@ import { storeProof } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { prompt, output, modelInfo, promptHash, outputHash, wallet } = body;
+    const contentType = request.headers.get("content-type") || "";
+    
+    let prompt: string;
+    let output: string | undefined;
+    let outputType: string;
+    let modelInfo: string;
+    let promptHash: string;
+    let outputHash: string;
+    let wallet: string;
+    let imageFile: File | undefined;
 
-    // Validate input
-    if (!prompt || !output || !modelInfo || !promptHash || !outputHash || !wallet) {
+    // Handle both JSON and FormData
+    if (contentType.includes("application/json")) {
+      const body = await request.json();
+      ({ prompt, output, outputType = "text", modelInfo, promptHash, outputHash, wallet } = body);
+      
+      // Validate input for text
+      if (!prompt || !output || !modelInfo || !promptHash || !outputHash || !wallet) {
+        return NextResponse.json(
+          { error: "Missing required fields" },
+          { status: 400 }
+        );
+      }
+    } else if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      prompt = formData.get("prompt") as string;
+      outputType = formData.get("outputType") as string;
+      modelInfo = formData.get("modelInfo") as string;
+      promptHash = formData.get("promptHash") as string;
+      outputHash = formData.get("outputHash") as string;
+      wallet = formData.get("wallet") as string;
+      imageFile = formData.get("imageFile") as File;
+
+      // Validate input for image
+      if (!prompt || !imageFile || !modelInfo || !promptHash || !outputHash || !wallet) {
+        return NextResponse.json(
+          { error: "Missing required fields" },
+          { status: 400 }
+        );
+      }
+    } else {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Unsupported content type" },
         { status: 400 }
       );
     }
@@ -19,7 +55,23 @@ export async function POST(request: NextRequest) {
     // Step 1: Upload to IPFS
     console.log("📤 Uploading content to IPFS...");
     const promptCID = await uploadToIPFS(prompt, `prompt-${Date.now()}.txt`);
-    const outputCID = await uploadToIPFS(output, `output-${Date.now()}.txt`);
+    
+    let outputCID: string;
+    
+    if (outputType === "text" && output) {
+      outputCID = await uploadToIPFS(output, `output-${Date.now()}.txt`);
+    } else if (outputType === "image" && imageFile) {
+      // Upload image file to IPFS
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const fileExtension = imageFile.name.split(".").pop() || "png";
+      outputCID = await uploadToIPFS(buffer, `output-${Date.now()}.${fileExtension}`);
+    } else {
+      return NextResponse.json(
+        { error: "Invalid output type or missing output data" },
+        { status: 400 }
+      );
+    }
 
     console.log(`✅ IPFS Upload Complete: Prompt CID = ${promptCID}, Output CID = ${outputCID}`);
 
@@ -79,6 +131,7 @@ export async function registerProofComplete(body: {
     outputHash,
     promptCID,
     outputCID,
+    outputType: "text", // Default for this legacy function
     txHash: result.txHash,
   });
 
