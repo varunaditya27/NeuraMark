@@ -373,7 +373,13 @@ export default function RegisterPage() {
                         ) : step.status === "error" ? (
                           <AlertCircle className="w-4 h-4 text-red-400" />
                         ) : (
-                          <span className="text-xs text-gray-500">{step.step}</span>
+                          step.step === 2 ? (
+                            <Upload className="w-4 h-4 text-gray-500" />
+                          ) : step.step === 1 ? (
+                            <Zap className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <span className="text-xs text-gray-500">{step.step}</span>
+                          )
                         )}
                       </div>
                       <div className="flex-1 pt-0.5">

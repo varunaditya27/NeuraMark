@@ -17,7 +17,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export interface ProofRecord {
-  id: number;
+  id: string;
   proofId: string;
   wallet: string;
   modelInfo: string;
