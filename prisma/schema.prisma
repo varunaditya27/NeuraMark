@@ -49,11 +49,14 @@ model Proof {
   outputCID  String
   outputType String   @default("text") // "text" or "image"
   txHash     String
+  tokenId    String?  // NFT token ID (from AuthorshipToken contract)
+  tokenTxHash String? // Transaction hash for token minting
   createdAt  DateTime @default(now())
 
   @@index([wallet])
   @@index([userId])
   @@index([proofId])
   @@index([createdAt])
+  @@index([tokenId])
 }
 

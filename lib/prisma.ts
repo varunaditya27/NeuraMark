@@ -27,6 +27,8 @@ export interface ProofRecord {
   outputCID: string;
   outputType: string;
   txHash: string;
+  tokenId?: string | null;
+  tokenTxHash?: string | null;
   createdAt: Date;
 }
 
