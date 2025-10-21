@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, Loader2, AlertCircle, TrendingUp, Clock, Shield } from "lucide-react";
+import { Search, Filter, Loader2, AlertCircle, TrendingUp, Clock, Shield, Award } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
 import ProofCard from "@/components/ProofCard";
+import TokenCard from "@/components/TokenCard";
 import { getAccount, isMetaMaskInstalled } from "@/lib/ethersClient";
 import { ProofRecord } from "@/lib/prisma";
 
@@ -319,38 +320,129 @@ export default function DashboardPage() {
 
         {/* Proofs Grid */}
         {walletConnected && !loading && !error && filteredProofs.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AnimatePresence>
-                {filteredProofs.map((proof, index) => (
-                  <motion.div
-                    key={proof.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
-                    <ProofCard proof={proof} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {/* No Results */}
-            {filteredProofs.length === 0 && proofs.length > 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-400">
-                  No proofs match your search criteria
-                </p>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <AnimatePresence>
+                  {filteredProofs.map((proof, index) => (
+                    <motion.div
+                      key={proof.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                    >
+                      <ProofCard proof={proof} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
-            )}
-          </motion.div>
+
+              {/* No Results */}
+              {filteredProofs.length === 0 && proofs.length > 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-400">
+                    No proofs match your search criteria
+                  </p>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Authorship Certificates Section */}
+            <AuthorshipCertificatesSection proofs={proofs} />
+          </>
         )}
       </div>
     </div>
+  );
+}
+
+// Authorship Certificates Section Component
+function AuthorshipCertificatesSection({ proofs }: { proofs: ProofRecord[] }) {
+  // Filter proofs that have tokens
+  const tokensData = proofs
+    .filter((p) => p.tokenId)
+    .map((p) => ({
+      id: p.id,
+      tokenId: p.tokenId!,
+      modelInfo: p.modelInfo,
+      createdAt: p.createdAt.toISOString(),
+      tokenTxHash: p.tokenTxHash || "",
+      outputCID: p.outputCID,
+      outputType: p.outputType,
+      promptHash: p.promptHash,
+      outputHash: p.outputHash,
+    }));
+
+  if (tokensData.length === 0) {
+    return null; // Don't show section if no tokens
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8, duration: 0.6 }}
+      className="mt-16"
+    >
+      <div className="flex items-center gap-3 mb-8">
+        <Award className="h-8 w-8 text-indigo-400" />
+        <div>
+          <h2 className="text-3xl font-bold text-neutral-100">
+            Your Authorship Certificates
+          </h2>
+          <p className="text-gray-400 mt-1">
+            Soulbound NFTs representing your AI content authorship ({tokensData.length} total)
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tokensData.map((token, index) => (
+          <TokenCard key={token.id} token={token} index={index} />
+        ))}
+      </div>
+
+      {/* Info Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.0, duration: 0.6 }}
+        className="mt-8"
+      >
+        <GlassmorphicCard className="p-6 border-amber-500/30 bg-amber-500/5">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 p-3 rounded-xl bg-amber-500/20 border border-amber-500/30">
+              <Shield className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                About Authorship Certificates
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Each certificate is a <strong className="text-amber-300">soulbound NFT</strong> (non-transferable ERC-721 token) 
+                that proves your authorship of AI-generated content. These tokens are permanently bound to your wallet and cannot 
+                be sold or transferred, ensuring authentic proof of creation.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-medium">
+                  Non-Transferable
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-medium">
+                  ERC-721 Standard
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-medium">
+                  Ethereum Sepolia
+                </span>
+              </div>
+            </div>
+          </div>
+        </GlassmorphicCard>
+      </motion.div>
+    </motion.div>
   );
 }

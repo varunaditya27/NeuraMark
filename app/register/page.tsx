@@ -40,6 +40,7 @@ export default function RegisterPage() {
     { step: 2, title: "Upload to IPFS", description: "Store content on decentralized storage", status: "pending" },
     { step: 3, title: "Register On-Chain", description: "Create immutable blockchain record", status: "pending" },
     { step: 4, title: "Store Metadata", description: "Save to database for quick access", status: "pending" },
+    { step: 5, title: "Mint NFT Certificate", description: "Create soulbound authorship token", status: "pending" },
   ]);
 
   useEffect(() => {
@@ -230,6 +231,53 @@ export default function RegisterPage() {
       console.log("✅ Proof stored in database:", storeData);
       updateStepStatus(4, "completed");
 
+      // Step 5: Mint Authorship Token (Soulbound NFT)
+      updateStepStatus(5, "active");
+      try {
+        const { mintAuthorshipToken } = await import("@/lib/authorshipTokenClient");
+        const { BrowserProvider } = await import("ethers");
+
+        // Get signer from MetaMask
+        const provider = new BrowserProvider(window.ethereum!);
+        const signer = await provider.getSigner();
+
+        // Mint the authorship token
+        const tokenResult = await mintAuthorshipToken(
+          signer,
+          currentAccount!,
+          promptHash,
+          outputHash,
+          promptCID, // Use prompt CID as the main content identifier
+          modelInfo
+        );
+
+        console.log("✅ Authorship token minted:", tokenResult);
+
+        // Update proof with token information
+        const updateTokenResponse = await fetch("/api/update-proof-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            proofId: blockchainResult.proofId,
+            tokenId: tokenResult.tokenId,
+            tokenTxHash: tokenResult.txHash,
+          }),
+        });
+
+        if (!updateTokenResponse.ok) {
+          console.warn("Failed to update proof with token info, but token was minted");
+        }
+
+        updateStepStatus(5, "completed");
+      } catch (tokenError) {
+        console.error("Token minting error (non-critical):", tokenError);
+        // Don't fail the entire registration if token minting fails
+        // The proof is already registered, token can be minted later
+        updateStepStatus(5, "error");
+      }
+
       setTxHash(blockchainResult.txHash);
       setSuccess(true);
 
@@ -238,6 +286,8 @@ export default function RegisterPage() {
         setPrompt("");
         setOutput("");
         setModelInfo("");
+        setImageFile(null);
+        setImagePreview(null);
         setSteps((prev) => prev.map((s) => ({ ...s, status: "pending" })));
       }, 3000);
     } catch (err) {
