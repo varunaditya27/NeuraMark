@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, Loader2, AlertCircle, TrendingUp, Clock, Shield, Award } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
@@ -8,8 +8,10 @@ import ProofCard from "@/components/ProofCard";
 import TokenCard from "@/components/TokenCard";
 import { getAccount, isMetaMaskInstalled } from "@/lib/ethersClient";
 import { ProofRecord } from "@/lib/prisma";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
   const [currentAccount, setCurrentAccount] = useState<string | null>(null);
@@ -20,16 +22,45 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // DID state
+  const [didProofCount, setDidProofCount] = useState<number>(0);
+  const [loadingDID, setLoadingDID] = useState(false);
+
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterModel, setFilterModel] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
+
+  const loadDIDStats = useCallback(async () => {
+    if (!user) return;
+    
+    setLoadingDID(true);
+    try {
+      const response = await fetch(`/api/did/create?userId=${user.uid}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.did) {
+          setDidProofCount(data.did.proofCount || 0);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading DID stats:", err);
+    } finally {
+      setLoadingDID(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     setMounted(true);
     checkWalletAndLoadProofs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadDIDStats();
+    }
+  }, [user, loadDIDStats]);
 
   useEffect(() => {
     applyFilters();
@@ -182,6 +213,24 @@ export default function DashboardPage() {
                       : "N/A"}
                   </p>
                   <p className="text-sm text-gray-400">Latest Proof</p>
+                </div>
+              </div>
+            </GlassmorphicCard>
+
+            <GlassmorphicCard gradient className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-indigo-500/20 border border-indigo-500/30">
+                  <Shield className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-white">
+                    {loadingDID ? (
+                      <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+                    ) : (
+                      didProofCount
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-400">DID-Linked Proofs</p>
                 </div>
               </div>
             </GlassmorphicCard>
