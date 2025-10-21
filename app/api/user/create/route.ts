@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  generateDID,
+  createDIDDocument,
+  uploadDIDToIPFS,
+} from "@/lib/didClient";
+import { createDID } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +21,7 @@ export async function POST(request: NextRequest) {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { firebaseUid },
+      include: { did: true }, // Include DID to check if it exists
     });
 
     if (existingUser) {
@@ -33,6 +40,36 @@ export async function POST(request: NextRequest) {
         photoURL,
       },
     });
+
+    console.log(`✅ User created: ${user.id}`);
+
+    // Automatically create DID for new user
+    try {
+      const didId = generateDID(user.id);
+      const didDocument = createDIDDocument(
+        user.id,
+        email,
+        displayName || "Anonymous",
+        [] // No wallets yet
+      );
+
+      // Upload DID to IPFS
+      const ipfsCID = await uploadDIDToIPFS(didDocument);
+
+      // Store DID in database
+      await createDID({
+        didId,
+        userId: user.id,
+        didDocument: didDocument as unknown as Record<string, unknown>,
+        ipfsCID,
+        proofCount: 0,
+      });
+
+      console.log(`✅ DID created for user: ${didId}`);
+    } catch (didError) {
+      console.error("❌ Error creating DID (non-blocking):", didError);
+      // Don't fail user creation if DID creation fails
+    }
 
     return NextResponse.json({
       success: true,

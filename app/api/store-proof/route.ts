@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storeProof } from "@/lib/prisma";
+import { storeProof, getDIDByUserId, prisma } from "@/lib/prisma";
+import { updateDIDWithProof, uploadDIDToIPFS, type DIDDocument, type ProofReference } from "@/lib/didClient";
+import { updateDID } from "@/lib/prisma";
 
 /**
  * API Route: Store Proof Metadata
  * 
  * After blockchain registration completes client-side,
- * this endpoint stores the proof metadata in the database.
+ * this endpoint stores the proof metadata in the database
+ * AND updates the user's DID document with the proof.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +57,46 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`✅ Proof metadata stored successfully: ${proof.id}`);
+
+    // Update DID document with new proof
+    try {
+      // Find user by wallet address
+      const walletRecord = await prisma.wallet.findUnique({
+        where: { address: wallet.toLowerCase() },
+        include: { user: true },
+      });
+
+      if (walletRecord && walletRecord.user) {
+        const userId = walletRecord.user.id;
+        const did = await getDIDByUserId(userId);
+
+        if (did) {
+          const didDocument = did.didDocument as unknown as DIDDocument;
+
+          const proofReference: ProofReference = {
+            proofId: proof.proofId,
+            ipfsCID: promptCID, // Primary IPFS reference
+            model: modelInfo,
+            timestamp: proof.createdAt.toISOString(),
+            txHash: proof.txHash,
+          };
+
+          const updatedDocument = updateDIDWithProof(didDocument, proofReference);
+          const newIpfsCID = await uploadDIDToIPFS(updatedDocument);
+
+          await updateDID(userId, {
+            didDocument: updatedDocument as unknown as Record<string, unknown>,
+            ipfsCID: newIpfsCID,
+            proofCount: updatedDocument.verifiedProofs.length,
+          });
+
+          console.log(`✅ DID updated with new proof: ${proofId}`);
+        }
+      }
+    } catch (didError) {
+      console.error("❌ Error updating DID (non-blocking):", didError);
+      // Don't fail proof storage if DID update fails
+    }
 
     return NextResponse.json({
       success: true,
