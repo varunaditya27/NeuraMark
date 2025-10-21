@@ -36,7 +36,9 @@
 - **⛓️ Blockchain-Backed**: Immutable proof stored on Ethereum (Sepolia)
 - **📦 IPFS Storage**: Decentralized content storage via Pinata
 - **🎨 Modern UI**: Glassmorphism design with Framer Motion animations
-- **💼 Wallet Integration**: Seamless MetaMask connection for decentralized identity
+- **� Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + Web3 wallets
+- **💼 Multi-Wallet Support**: Link multiple Ethereum addresses to one account
+- **🔗 Unified Account Badge**: Innovative UI merging profile and wallet status
 - **🔍 Public Verification**: Anyone can verify registered proofs
 
 ---
@@ -47,17 +49,22 @@
 
 | Feature | Description |
 |---------|-------------|
+| **👤 User Authentication** | Sign in with Google OAuth or Email/Password via Firebase |
+| **💼 Multi-Wallet Management** | Link and manage multiple Ethereum addresses per account |
 | **🎭 Proof Registration** | Register AI prompts, outputs, and model metadata with cryptographic hashing |
 | **✅ Proof Verification** | Verify any registered proof using proof ID or content hash |
 | **📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
+| **👤 Profile Management** | Manage account settings, linked wallets, and user preferences |
 | **🌐 IPFS Integration** | Decentralized content storage with permanent CID references |
 | **🔗 Blockchain Tracking** | View transaction details on Etherscan |
-| **👤 Wallet Identity** | Connect with MetaMask for decentralized identity management |
 
 ### Technical Features
 
+- **Hybrid Authentication**: Firebase Auth for Web2 + MetaMask for Web3 identity
 - **Smart Contract**: Solidity-based proof registry on Sepolia testnet
-- **Database**: PostgreSQL (Supabase) with Prisma ORM for indexing
+- **Database**: PostgreSQL (Supabase) with Prisma ORM for user and proof data
+- **Multi-Wallet Architecture**: One user account can link multiple Ethereum addresses
+- **Wallet Linking Rules**: Enforced one-to-one mapping (one wallet = one user only)
 - **Hash Generation**: Client-side SHA-256 hashing via Web Crypto API
 - **Gas Optimization**: Minimal on-chain storage to reduce costs
 - **Type Safety**: Full TypeScript implementation
@@ -130,8 +137,17 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
 Create a `.env.local` file in the root directory:
 
 ```env
+# Firebase Authentication
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
 # Smart Contract Configuration
-NEXT_PUBLIC_CONTRACT_ADDRESS=0x6F20CFA1223818e4C00Fa1992557fe95757E3877
+NEXT_PUBLIC_CONTRACT_ADDRESS=0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795
 NEXT_PUBLIC_CHAIN_ID=11155111
 
 # Database (Supabase PostgreSQL)
@@ -152,20 +168,35 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 
 ### Get Your Credentials
 
-1. **Supabase**: [https://supabase.com](https://supabase.com) - Create project and get database URL
-2. **Pinata**: [https://pinata.cloud](https://pinata.cloud) - Sign up and get API keys
-3. **Alchemy**: [https://alchemy.com](https://alchemy.com) - Create app for Sepolia network
-4. **Etherscan**: [https://etherscan.io/apis](https://etherscan.io/apis) - Get API key for contract verification
+1. **Firebase**: [https://console.firebase.google.com](https://console.firebase.google.com) - Create project, enable Authentication (Google + Email/Password)
+2. **Supabase**: [https://supabase.com](https://supabase.com) - Create project and get database URL
+3. **Pinata**: [https://pinata.cloud](https://pinata.cloud) - Sign up and get API keys
+4. **Alchemy**: [https://alchemy.com](https://alchemy.com) - Create app for Sepolia network
+5. **Etherscan**: [https://etherscan.io/apis](https://etherscan.io/apis) - Get API key for contract verification
 
 ---
 
 ## 🎮 Usage
 
-### 1. Connect Wallet
+### 1. Create an Account
 
-Click **"Connect Wallet"** in the navbar to connect your MetaMask wallet to Sepolia network.
+Click **"Sign In"** in the navbar and choose:
+- **Google OAuth**: One-click sign-in with your Google account
+- **Email/Password**: Create account with email and password
 
-### 2. Register a Proof
+Your account is created in both Firebase and the NeuraMark database.
+
+### 2. Link Your Wallet(s)
+
+After signing in:
+1. Navigate to your **Profile** page (click your avatar)
+2. Click **"Link Wallet"** button
+3. Approve MetaMask connection
+4. Your wallet is now linked to your account (first wallet becomes Primary)
+
+**Multi-Wallet Support**: You can link multiple Ethereum addresses to one account for flexibility.
+
+### 3. Register a Proof
 
 Navigate to `/register`:
 
@@ -175,26 +206,37 @@ Navigate to `/register`:
 4. **Submit**: Approve MetaMask transaction (small gas fee)
 
 The system will:
+
 - Hash your prompt and output (SHA-256)
 - Upload content to IPFS
 - Register proof on blockchain
-- Store metadata in database
+- Store metadata in database (linked to your user account)
 
-### 3. View Your Proofs
+### 4. Manage Your Profile
+
+Navigate to `/profile` to:
+
+- View account information (email, display name, join date)
+- Manage linked wallets (add/remove, set primary)
+- View wallet connection status
+- Sign out from your account
+
+### 5. View Your Proofs
 
 Navigate to `/dashboard` to see all your registered proofs with:
+
 - Search functionality
 - Model filters
 - Sort by date
 - Proof statistics
 
-### 4. Verify a Proof
+### 6. Verify a Proof
 
 Navigate to `/verify`:
 
 1. Enter a proof ID
 2. View complete proof details:
-   - Creator wallet address
+   - Creator wallet address and user account
    - Timestamp
    - Model information
    - Content hashes
@@ -212,6 +254,7 @@ Navigate to `/verify`:
 │                    Frontend Layer                   │
 │  Next.js 15 + React 19 + TypeScript + Tailwind CSS  │
 │         Framer Motion + shadcn/ui + Lucide          │
+│              AuthContext + Firebase SDK             │
 └─────────────────────────────────────────────────────┘
                           │
                           ▼
@@ -219,16 +262,16 @@ Navigate to `/verify`:
 │                   API Routes Layer                  │
 │      Next.js API Routes (Serverless Functions)      │
 │    /api/register-proof  /api/verify-proof           │
-│             /api/get-proofs                         │
+│    /api/user/*  /api/wallet/*  /api/get-proofs      │
 └─────────────────────────────────────────────────────┘
                           │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
-┌─────────────┐  ┌──────────────┐  ┌────────────┐
-│  Blockchain │  │     IPFS     │  │  Database  │
-│  (Sepolia)  │  │   (Pinata)   │  │ (Supabase) │
-│  Ethers.js  │  │  Content CID │  │   Prisma   │
-└─────────────┘  └──────────────┘  └────────────┘
+          ┌───────────────┼───────────────┬───────────┐
+          ▼               ▼               ▼           ▼
+┌─────────────┐  ┌──────────────┐  ┌────────────┐  ┌──────────┐
+│   Firebase  │  │  Blockchain  │  │    IPFS    │  │ Database │
+│    Auth     │  │  (Sepolia)   │  │  (Pinata)  │  │(Supabase)│
+│OAuth/Email  │  │  Ethers.js   │  │Content CID │  │  Prisma  │
+└─────────────┘  └──────────────┘  └────────────┘  └──────────┘
 ```
 
 ### Smart Contract
@@ -252,24 +295,88 @@ struct Proof {
 ### Database Schema (Prisma)
 
 ```prisma
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  email       String   @unique
+  displayName String?
+  photoURL    String?
+  wallets     Wallet[]
+  proofs      Proof[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  isPrimary Boolean  @default(false)
+  label     String?
+  createdAt DateTime @default(now())
+}
+
 model Proof {
-  id              String   @id @default(cuid())
-  proofId         String   @unique
-  creator         String
-  prompt          String?
-  output          String?
-  modelInfo       String
-  promptHash      String
-  outputHash      String
-  IPFSHash        String?
-  transactionHash String?
-  timestamp       DateTime @default(now())
-  blockNumber     Int?
+  id         String   @id @default(cuid())
+  proofId    String   @unique
+  wallet     String
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  modelInfo  String
+  promptHash String
+  outputHash String
+  promptCID  String
+  outputCID  String
+  outputType String   @default("text")
+  txHash     String
+  timestamp  DateTime @default(now())
   
-  @@index([proofId])
-  @@index([creator])
+  @@index([wallet])
+  @@index([userId])
 }
 ```
+
+**Key Relationships:**
+
+- **One User → Many Wallets**: Users can link multiple Ethereum addresses
+- **One Wallet → One User**: Each wallet address can only belong to one user (enforced via `@unique`)
+- **One User → Many Proofs**: All proofs are linked to the user account
+
+### Authentication & Identity System
+
+NeuraMark implements a **hybrid authentication model** combining Web2 and Web3 identity:
+
+**Firebase Authentication (Web2):**
+
+- Google OAuth sign-in
+- Email/Password authentication
+- Session management and token refresh
+- User profile storage (name, email, photo)
+
+**MetaMask Wallet Integration (Web3):**
+
+- Ethereum address connection
+- Transaction signing for proof registration
+- Multi-wallet support per user account
+- Cryptographic ownership verification
+
+**Unified Account Badge:**
+
+The navbar features an innovative merged component that displays both user identity and wallet status in one cohesive UI element:
+
+- User avatar and display name
+- Connected wallet address (truncated)
+- Connection status indicator (animated pulse)
+- Dropdown with wallet management and profile access
+- Auto-linking: Connecting a wallet automatically links it to your account
+
+**Security Rules:**
+
+1. ✅ One user can link multiple wallet addresses
+2. ❌ One wallet can only be linked to one user (database-enforced uniqueness)
+3. 🔐 All API routes validate Firebase authentication via `x-firebase-uid` header
+4. 🛡️ Wallet ownership validated through MetaMask connection
 
 ---
 
@@ -284,23 +391,33 @@ NeuraMark/
 │   ├── register/            # Proof registration
 │   ├── dashboard/           # User dashboard
 │   ├── verify/              # Proof verification
+│   ├── profile/             # User profile & wallet management
 │   └── api/                 # API routes
+│       ├── register-proof/  # Register proof endpoint
+│       ├── verify-proof/    # Verify proof endpoint
+│       ├── user/create/     # Create user in database
+│       └── wallet/          # Wallet management endpoints
 ├── components/              # React components
-│   ├── Navbar.tsx
+│   ├── Navbar.tsx           # Navigation with unified badge
+│   ├── AuthModal.tsx        # Sign in/sign up modal
+│   ├── UnifiedAccountBadge.tsx  # Merged profile + wallet
 │   ├── Footer.tsx
-│   ├── WalletConnect.tsx
 │   ├── GlassmorphicCard.tsx
 │   └── ProofCard.tsx
+├── contexts/                # React Context providers
+│   └── AuthContext.tsx      # Firebase authentication state
 ├── lib/                     # Utilities
-│   ├── ethersClient.ts     # Web3 interactions
-│   ├── pinata.ts           # IPFS operations
-│   ├── prisma.ts           # Database queries
-│   └── utils.ts            # Helper functions
+│   ├── firebase.ts          # Firebase auth functions
+│   ├── ethersClient.ts      # Web3 interactions
+│   ├── pinata.ts            # IPFS operations
+│   ├── prisma.ts            # Database queries
+│   └── utils.ts             # Helper functions
 ├── prisma/                  # Database schema
+│   └── schema.prisma        # User, Wallet, Proof models
 ├── public/                  # Static assets
 └── hardhat-example/         # Smart contract development
     ├── contracts/
-    ├── scripts/
+    ├── ignition/modules/
     └── test/
 ```
 
@@ -344,13 +461,37 @@ npm test
 
 ### Manual Testing Checklist
 
-- [ ] Wallet connection (MetaMask)
+**Authentication:**
+
+- [ ] Sign in with Google OAuth
+- [ ] Sign up with Email/Password
+- [ ] Sign in with Email/Password
+- [ ] Profile page loads correctly
+- [ ] Sign out functionality
+
+**Wallet Management:**
+
+- [ ] Link first wallet (becomes Primary)
+- [ ] Link multiple wallets to one account
+- [ ] Unlink wallet with confirmation
+- [ ] Wallet linking validation (duplicate wallet detection)
+- [ ] Unified account badge displays correctly
+
+**Proof Management:**
+
 - [ ] Proof registration with transaction confirmation
-- [ ] Dashboard displays registered proofs
+- [ ] Dashboard displays user's registered proofs
 - [ ] Search and filter functionality
 - [ ] Proof verification by ID
 - [ ] IPFS content retrieval
 - [ ] Etherscan transaction links
+
+**UI/UX:**
+
+- [ ] Glassmorphism design consistency
+- [ ] Framer Motion animations
+- [ ] Mobile responsiveness
+- [ ] Unified account badge dropdown
 
 ---
 
@@ -397,6 +538,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🙏 Acknowledgments
 
+- **Firebase** - For authentication infrastructure
 - **Ethereum Foundation** - For blockchain infrastructure
 - **Next.js Team** - For the amazing React framework
 - **Pinata** - For IPFS pinning services
