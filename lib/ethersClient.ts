@@ -77,26 +77,68 @@ export const connectWallet = async (): Promise<string> => {
       throw new Error("MetaMask is not installed. Please install MetaMask to use this feature.");
     }
 
+    // Check if MetaMask is locked
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ 
+          method: "eth_accounts" 
+        }) as string[];
+        
+        // If no accounts returned, MetaMask is locked or no accounts connected
+        if (accounts.length === 0) {
+          console.log("📝 No accounts found, requesting connection...");
+        }
+      } catch (err) {
+        console.error("Error checking accounts:", err);
+      }
+    }
+
     const provider = getProvider();
     const accounts = await provider.send("eth_requestAccounts", []);
     
     if (!accounts || accounts.length === 0) {
-      throw new Error("No accounts found. Please unlock MetaMask.");
+      throw new Error("No accounts found. Please unlock MetaMask and try again.");
     }
 
     console.log("✅ Wallet connected:", accounts[0]);
     return accounts[0];
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error as { code?: number; message?: string };
     console.error("❌ Error connecting wallet:", error);
+    
+    // Provide more specific error messages
+    if (err.code === 4001) {
+      throw new Error("Connection request was rejected. Please approve the connection in MetaMask.");
+    } else if (err.code === -32002) {
+      throw new Error("Connection request already pending. Please check MetaMask.");
+    } else if (err.message?.toLowerCase().includes("user rejected")) {
+      throw new Error("Connection request was rejected by user.");
+    }
+    
     throw error;
   }
 };
 
 /**
  * Get connected account address
+ * @throws Error if no account is connected or MetaMask is locked
  */
 export const getAccount = async (): Promise<string> => {
   try {
+    // First check if any accounts are available
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ 
+        method: "eth_accounts" 
+      }) as string[];
+      
+      if (accounts.length === 0) {
+        throw new Error("No accounts connected. Please connect your wallet.");
+      }
+      
+      return accounts[0];
+    }
+    
+    // Fallback to provider method
     const signer = await getSigner();
     return await signer.getAddress();
   } catch (error) {

@@ -32,6 +32,26 @@ export default function UnifiedAccountBadge() {
     }
   }, [user]);
 
+  // Listen for MetaMask account changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.ethereum) {
+      const handleAccountsChanged = (accounts: unknown) => {
+        const accountsArray = accounts as string[];
+        if (accountsArray.length > 0) {
+          setConnectedWallet(accountsArray[0]);
+        } else {
+          setConnectedWallet(null);
+        }
+      };
+
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      
+      return () => {
+        window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
+      };
+    }
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -65,12 +85,24 @@ export default function UnifiedAccountBadge() {
   };
 
   const checkConnectedWallet = async () => {
-    const account = await getAccount();
-    setConnectedWallet(account);
+    try {
+      const account = await getAccount();
+      setConnectedWallet(account);
+    } catch (error) {
+      // MetaMask not connected or no account available
+      setConnectedWallet(null);
+    }
   };
 
   const handleConnectWallet = async () => {
     try {
+      // Check if MetaMask is installed
+      if (typeof window === 'undefined' || !window.ethereum) {
+        alert("MetaMask is not installed. Please install MetaMask browser extension.");
+        window.open("https://metamask.io/download/", "_blank");
+        return;
+      }
+
       const address = await connectWallet();
       if (address) {
         setConnectedWallet(address);
@@ -94,11 +126,29 @@ export default function UnifiedAccountBadge() {
 
           if (response.ok) {
             await loadWallets();
+          } else {
+            const errorData = await response.json();
+            alert(`Failed to link wallet: ${errorData.error || 'Unknown error'}`);
           }
         }
       }
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
+    } catch (err) {
+      console.error("Error connecting wallet:", err);
+      
+      // Provide user-friendly error messages
+      const error = err as { code?: number; message?: string };
+      
+      if (error.code === 4001) {
+        alert("Connection rejected. Please approve the connection request in MetaMask.");
+      } else if (error.code === -32002) {
+        alert("MetaMask connection already pending. Please check MetaMask and approve the request.");
+      } else if (error.message?.includes("locked")) {
+        alert("MetaMask is locked. Please unlock MetaMask and try again.");
+      } else if (error.message?.includes("not installed")) {
+        alert("MetaMask is not installed. Please install MetaMask browser extension.");
+      } else {
+        alert(`Failed to connect wallet: ${error.message || 'Unknown error'}`);
+      }
     }
   };
 
@@ -120,6 +170,7 @@ export default function UnifiedAccountBadge() {
 
   const primaryWallet = wallets.find(w => w.isPrimary);
   const displayWallet = connectedWallet || primaryWallet?.address;
+  const isWalletActive = !!connectedWallet; // True if MetaMask is actively connected
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -144,8 +195,8 @@ export default function UnifiedAccountBadge() {
             </div>
           )}
           
-          {/* Wallet Connection Indicator */}
-          {displayWallet && (
+          {/* Wallet Connection Indicator - Only show when MetaMask is actively connected */}
+          {isWalletActive && (
             <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-slate-950 border-2 border-teal-500">
               <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
             </div>
@@ -158,12 +209,13 @@ export default function UnifiedAccountBadge() {
             {user?.displayName || "User"}
           </span>
           {displayWallet ? (
-            <span className="text-teal-300 text-xs font-mono flex items-center gap-1">
+            <span className={`text-xs font-mono flex items-center gap-1 ${isWalletActive ? 'text-teal-300' : 'text-gray-400'}`}>
               <Wallet className="w-3 h-3" />
               {formatAddress(displayWallet)}
+              {!isWalletActive && <span className="text-[10px] text-gray-500 ml-1">(Linked)</span>}
             </span>
           ) : (
-            <span className="text-gray-400 text-xs">No wallet connected</span>
+            <span className="text-gray-400 text-xs">No wallet linked</span>
           )}
         </div>
 
@@ -210,7 +262,7 @@ export default function UnifiedAccountBadge() {
             <div className="p-3 border-b border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                  Connected Wallet
+                  {isWalletActive ? 'Connected Wallet' : 'Wallet Status'}
                 </span>
                 {wallets.length > 0 && (
                   <span className="text-teal-400 text-xs">
@@ -220,23 +272,41 @@ export default function UnifiedAccountBadge() {
               </div>
 
               {displayWallet ? (
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 group hover:border-teal-500/30 transition-all">
-                  <div className="flex items-center gap-2 flex-1">
-                    <Wallet className="w-4 h-4 text-teal-400" />
-                    <span className="font-mono text-white text-sm">
-                      {formatAddress(displayWallet)}
-                    </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 group hover:border-teal-500/30 transition-all">
+                    <div className="flex items-center gap-2 flex-1">
+                      <Wallet className={`w-4 h-4 ${isWalletActive ? 'text-teal-400' : 'text-gray-400'}`} />
+                      <span className="font-mono text-white text-sm">
+                        {formatAddress(displayWallet)}
+                      </span>
+                      {!isWalletActive && (
+                        <span className="text-xs text-gray-500 px-2 py-0.5 rounded-full bg-gray-800/50">
+                          Linked
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleCopyAddress(displayWallet)}
+                      className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      {copiedAddress === displayWallet ? (
+                        <Check className="w-4 h-4 text-teal-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleCopyAddress(displayWallet)}
-                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    {copiedAddress === displayWallet ? (
-                      <Check className="w-4 h-4 text-teal-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
+                  
+                  {/* Connect to MetaMask button when wallet is linked but not connected */}
+                  {!isWalletActive && (
+                    <button
+                      onClick={handleConnectWallet}
+                      className="w-full p-2.5 rounded-xl bg-gradient-to-r from-indigo-500/10 to-teal-500/10 border border-indigo-500/30 hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2 text-indigo-300 hover:text-indigo-200"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      <span className="text-sm font-medium">Connect to MetaMask</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <button
@@ -244,7 +314,7 @@ export default function UnifiedAccountBadge() {
                   className="w-full p-3 rounded-xl bg-gradient-to-r from-indigo-500/20 to-teal-500/20 border border-indigo-500/30 hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2 text-indigo-300 hover:text-indigo-200"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="text-sm font-medium">Connect Wallet</span>
+                  <span className="text-sm font-medium">Link Wallet</span>
                 </button>
               )}
 
