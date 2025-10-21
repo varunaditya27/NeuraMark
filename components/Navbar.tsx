@@ -6,12 +6,16 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wallet, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import WalletConnect from "./WalletConnect";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "./AuthModal";
+import UnifiedAccountBadge from "./UnifiedAccountBadge";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -81,9 +85,18 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Wallet Connect */}
-          <div className="hidden md:block">
-            <WalletConnect />
+          {/* Auth & Wallet Section */}
+          <div className="hidden md:flex items-center gap-4">
+            {user ? (
+              <UnifiedAccountBadge />
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-teal-500 text-white font-semibold hover:opacity-90 transition-all"
+              >
+                Sign In
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -125,13 +138,29 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <div className="pt-4 border-t border-white/10">
-                <WalletConnect />
-              </div>
+              {user && (
+                <div className="pt-4 border-t border-white/10">
+                  <UnifiedAccountBadge />
+                </div>
+              )}
+              {!user && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowAuthModal(true);
+                  }}
+                  className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-teal-500 text-white font-semibold hover:opacity-90 transition-all"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </motion.nav>
   );
 }
