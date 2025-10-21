@@ -40,6 +40,7 @@
 - **💼 Multi-Wallet Support**: Link multiple Ethereum addresses to one account
 - **🔗 Unified Account Badge**: Innovative UI merging profile and wallet status
 - **📄 PDF Certificates**: Download professional proof certificates with QR codes
+- **🔍 Public Proof Explorer**: Browse all proofs with advanced search and filters
 - **🔍 Public Verification**: Anyone can verify registered proofs
 
 ---
@@ -54,7 +55,8 @@
 | **💼 Multi-Wallet Management** | Link and manage multiple Ethereum addresses per account |
 | **🎭 Proof Registration** | Register AI prompts, outputs, and model metadata with cryptographic hashing |
 | **✅ Proof Verification** | Verify any registered proof using proof ID or content hash |
-| **📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
+| **� Public Proof Explorer** | Browse all registered proofs with advanced search and filters |
+| **�📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
 | **👤 Profile Management** | Manage account settings, linked wallets, and user preferences |
 | **📄 Certificate Generation** | Download professional PDF certificates with QR codes for any proof |
 | **🌐 IPFS Integration** | Decentralized content storage with permanent CID references |
@@ -232,7 +234,18 @@ Navigate to `/dashboard` to see all your registered proofs with:
 - Sort by date
 - Proof statistics
 
-### 6. Verify a Proof
+### 6. Explore Public Proofs
+
+Navigate to `/explorer` to browse all registered proofs:
+
+- **Real-Time Statistics**: View total proofs, type breakdown, and top models
+- **Advanced Search**: Filter by wallet, model, or proof ID
+- **Type Filters**: Filter by Text, Image, or Code proofs
+- **Expandable Details**: Click any row to see full proof information
+- **QR Codes**: Generate QR codes for easy mobile verification
+- **Direct Links**: Open proofs on IPFS or Etherscan
+
+### 7. Verify a Proof
 
 Navigate to `/verify`:
 
@@ -392,6 +405,7 @@ NeuraMark/
 │   ├── page.tsx             # Landing page
 │   ├── register/            # Proof registration
 │   ├── dashboard/           # User dashboard
+│   ├── explorer/            # Public proof explorer
 │   ├── verify/              # Proof verification
 │   ├── profile/             # User profile & wallet management
 │   └── api/                 # API routes
@@ -404,6 +418,8 @@ NeuraMark/
 │   ├── Navbar.tsx           # Navigation with unified badge
 │   ├── AuthModal.tsx        # Sign in/sign up modal
 │   ├── UnifiedAccountBadge.tsx  # Merged profile + wallet
+│   ├── ExplorerSearchBar.tsx    # Explorer search and filters
+│   ├── ExplorerProofTable.tsx   # Explorer table with animations
 │   ├── Footer.tsx
 │   ├── GlassmorphicCard.tsx
 │   └── ProofCard.tsx
@@ -414,6 +430,7 @@ NeuraMark/
 │   ├── ethersClient.ts      # Web3 interactions
 │   ├── pinata.ts            # IPFS operations
 │   ├── pdfGenerator.ts      # PDF certificate generation
+│   ├── fetchProofs.ts       # Explorer data fetching
 │   ├── prisma.ts            # Database queries
 │   └── utils.ts             # Helper functions
 ├── prisma/                  # Database schema
@@ -491,6 +508,19 @@ npm test
 - [ ] IPFS content retrieval
 - [ ] Etherscan transaction links
 
+**Public Explorer:**
+
+- [ ] Explorer page loads with statistics
+- [ ] Search filters by wallet/model/proof ID
+- [ ] Model filter works correctly
+- [ ] Type filter (Text/Image/Code) works
+- [ ] Sort changes order (recent/oldest)
+- [ ] Row expansion shows full details
+- [ ] Copy buttons work with visual feedback
+- [ ] QR code modal generates correctly
+- [ ] Load more button fetches additional proofs
+- [ ] Empty state shows when no proofs match filters
+
 **UI/UX:**
 
 - [ ] Glassmorphism design consistency
@@ -528,6 +558,8 @@ Contributions are welcome! Please follow these steps:
 - [x] Glassmorphism UI with animations
 - [x] Hybrid authentication (Firebase + Web3)
 - [x] Multi-wallet support and management
+- [x] PDF certificate generation with QR codes
+- [x] Public proof explorer with advanced search
 - [x] PDF certificate generation with QR codes
 - [ ] Soulbound NFT certificates
 - [ ] AI-based originality scoring
