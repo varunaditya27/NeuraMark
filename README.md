@@ -34,6 +34,7 @@
 
 - **🔐 Cryptographic Verification**: SHA-256 hashing ensures content integrity
 - **⛓️ Blockchain-Backed**: Immutable proof stored on Ethereum (Sepolia)
+- **🎨 Soulbound NFT Certificates**: Each proof gets a non-transferable ERC-721 token
 - **📦 IPFS Storage**: Decentralized content storage via Pinata
 - **🎨 Modern UI**: Glassmorphism design with Framer Motion animations
 - **👤 Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + Web3 wallets
@@ -54,6 +55,7 @@
 | **👤 User Authentication** | Sign in with Google OAuth or Email/Password via Firebase |
 | **💼 Multi-Wallet Management** | Link and manage multiple Ethereum addresses per account |
 | **🎭 Proof Registration** | Register AI prompts, outputs, and model metadata with cryptographic hashing |
+| **🎨 Authorship NFTs** | Automatically mint soulbound ERC-721 tokens for each registered proof |
 | **✅ Proof Verification** | Verify any registered proof using proof ID or content hash |
 | **� Public Proof Explorer** | Browse all registered proofs with advanced search and filters |
 | **�📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
@@ -260,7 +262,77 @@ Navigate to `/verify`:
 
 ---
 
-## 🏗️ Architecture
+## � Authorship NFT Certificates (NEW!)
+
+### Soulbound Tokens for Proof Ownership
+
+Every registered proof automatically receives a **soulbound NFT** (non-transferable ERC-721 token) that serves as an immutable certificate of authorship.
+
+#### Key Features
+
+- **🔒 Soulbound**: Tokens cannot be transferred or sold, ensuring authentic ownership
+- **🎨 ERC-721 Standard**: Compatible with OpenSea, Rarible, and other NFT marketplaces (view-only)
+- **📊 On-Chain Metadata**: Proof hashes, IPFS CIDs, and model info stored directly on blockchain
+- **🖼️ Visual Certificates**: Each token links to rich metadata including proof content
+- **🔗 Permanent Linkage**: Token ID tied to proof ID for verifiable authenticity
+
+#### Smart Contract
+
+**Contract Address**: [`0x951df3400098cB80990B54E6bE651a54f94A36BF`](https://sepolia.etherscan.io/address/0x951df3400098cB80990B54E6bE651a54f94A36BF)  
+**Token Name**: NeuraMark Authorship Token  
+**Symbol**: NEURA  
+**Network**: Sepolia Testnet
+
+```solidity
+contract AuthorshipToken is ERC721, Ownable {
+    struct ProofMetadata {
+        string promptHash;
+        string outputHash;
+        string ipfsCID;
+        string modelInfo;
+        uint256 timestamp;
+        address creator;
+    }
+    
+    function mintAuthorshipToken(
+        address to,
+        string memory promptHash,
+        string memory outputHash,
+        string memory ipfsCID,
+        string memory modelInfo
+    ) external returns (uint256 tokenId);
+    
+    // Transfer functions are overridden to revert (soulbound)
+}
+```
+
+#### How It Works
+
+1. **Register Proof**: User registers AI content proof on blockchain
+2. **Auto-Mint NFT**: System automatically mints soulbound token with proof metadata
+3. **Store Token ID**: Database links proof to token for easy retrieval
+4. **View Certificate**: Users see NFT in dashboard "Authorship Certificates" section
+5. **Verify On-Chain**: Anyone can view token on Etherscan/OpenSea (testnet)
+
+#### Dashboard Integration
+
+The dashboard now features a dedicated **"Your Authorship Certificates"** section displaying:
+
+- Token ID and soulbound badge
+- Model information and creation date
+- Proof content hash
+- Links to Etherscan and OpenSea
+- Visual preview (for image-based proofs)
+
+#### Links
+
+- **Etherscan**: [View Contract](https://sepolia.etherscan.io/address/0x951df3400098cB80990B54E6bE651a54f94A36BF)
+- **Blockscout**: [View Verified Source](https://eth-sepolia.blockscout.com/address/0x951df3400098cB80990B54E6bE651a54f94A36BF#code)
+- **OpenSea Testnet**: View your tokens at `https://testnets.opensea.io/assets/sepolia/0x951df3400098cB80990B54E6bE651a54f94A36BF/[tokenId]`
+
+---
+
+## �🏗️ Architecture
 
 ### Technology Stack
 

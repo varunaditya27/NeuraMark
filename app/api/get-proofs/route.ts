@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
         outputCID: proof.outputCID,
         outputType: proof.outputType,
         txHash: proof.txHash,
+        tokenId: proof.tokenId,
+        tokenTxHash: proof.tokenTxHash,
         createdAt: proof.createdAt.toISOString(),
       })),
       count: proofs.length,
