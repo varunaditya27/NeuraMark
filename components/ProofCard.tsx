@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Clock, Shield, FileText } from "lucide-react";
+import { ExternalLink, Clock, Shield, FileText, Download, Loader2 } from "lucide-react";
 import GlassmorphicCard from "./GlassmorphicCard";
 import { formatAddress } from "@/lib/ethersClient";
 
@@ -23,6 +23,8 @@ interface ProofCardProps {
 }
 
 export default function ProofCard({ proof }: ProofCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const createdDate = typeof proof.createdAt === 'string' 
     ? new Date(proof.createdAt) 
     : proof.createdAt;
@@ -35,6 +37,61 @@ export default function ProofCard({ proof }: ProofCardProps) {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  };
+
+  /**
+   * Downloads the proof certificate as a PDF
+   */
+  const handleDownloadCertificate = async () => {
+    setIsDownloading(true);
+
+    try {
+      // Prepare certificate data
+      const certificateData = {
+        proofTitle: `AI Content Proof - ${proof.modelInfo}`,
+        creatorWallet: proof.wallet,
+        ipfsCID: proof.outputCID,
+        txHash: proof.txHash,
+        timestamp: createdDate.toISOString(),
+        proofFingerprint: proof.proofId,
+        modelInfo: proof.modelInfo,
+        etherscanUrl: `https://sepolia.etherscan.io/tx/${proof.txHash}`,
+      };
+
+      // Call API to generate certificate
+      const response = await fetch('/api/generate-certificate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(certificateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate certificate');
+      }
+
+      // Get PDF blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neuramark-certificate-${proof.proofId.substring(0, 16)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading certificate:', error);
+      alert('Failed to download certificate. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -118,16 +175,39 @@ export default function ProofCard({ proof }: ProofCardProps) {
         </div>
 
         {/* Transaction Link */}
-        <motion.a
-          href={`https://sepolia.etherscan.io/tx/${proof.txHash}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ x: 4 }}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-400 transition-colors"
-        >
-          <span>View on Etherscan</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </motion.a>
+        <div className="flex items-center gap-3">
+          <motion.a
+            href={`https://sepolia.etherscan.io/tx/${proof.txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ x: 4 }}
+            className="flex-1 flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-400 transition-colors"
+          >
+            <span>View on Etherscan</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </motion.a>
+          
+          {/* Download Certificate Button */}
+          <motion.button
+            onClick={handleDownloadCertificate}
+            disabled={isDownloading}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500/20 to-teal-500/20 border border-indigo-500/30 text-white hover:border-indigo-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm font-medium">Generating...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span className="text-sm font-medium">Certificate</span>
+              </>
+            )}
+          </motion.button>
+        </div>
       </div>
     </GlassmorphicCard>
   );
