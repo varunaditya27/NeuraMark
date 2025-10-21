@@ -33,16 +33,18 @@
 ### 🔥 Key Highlights
 
 - **🔐 Cryptographic Verification**: SHA-256 hashing ensures content integrity
-- **⛓️ Blockchain-Backed**: Immutable proof stored on Ethereum (Sepolia)
-- **🎨 Soulbound NFT Certificates**: Each proof gets a non-transferable ERC-721 token
-- **📦 IPFS Storage**: Decentralized content storage via Pinata
-- **🎨 Modern UI**: Glassmorphism design with Framer Motion animations
-- **👤 Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + Web3 wallets
+- **⛓️ Blockchain-Backed**: Immutable proof stored on Ethereum (Sepolia testnet)
+- **🎨 Soulbound NFT Certificates**: Automatic ERC-721 token minting for each proof (non-transferable)
+- **🆔 Decentralized Identifiers (DID)**: W3C DID Core v1.0 compliant identity system
+- **📦 IPFS Storage**: Decentralized content storage via Pinata (prompts, outputs, DIDs)
+- **🎨 Modern UI**: Glassmorphism design with smooth Framer Motion animations
+- **👤 Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + MetaMask wallets
 - **💼 Multi-Wallet Support**: Link multiple Ethereum addresses to one account
 - **🔗 Unified Account Badge**: Innovative UI merging profile and wallet status
-- **📄 PDF Certificates**: Download professional proof certificates with QR codes
-- **🔍 Public Proof Explorer**: Browse all proofs with advanced search and filters
-- **🔍 Public Verification**: Anyone can verify registered proofs
+- **📄 PDF Certificates**: Download professional certificates with QR codes and blockchain verification
+- **🔍 Public Proof Explorer**: Browse all proofs with real-time stats, search, and filters
+- **✅ Public Verification**: Verify registered proofs and DIDs via dedicated verification pages
+- **📊 DID-Linked Proofs**: Unified identity linking all Web2 + Web3 accounts and proofs
 
 ---
 
@@ -53,11 +55,13 @@
 | Feature | Description |
 |---------|-------------|
 | **👤 User Authentication** | Sign in with Google OAuth or Email/Password via Firebase |
+| **🆔 Decentralized Identity (DID)** | Auto-generated DID linking Web2 account + Web3 wallets + all proofs |
 | **💼 Multi-Wallet Management** | Link and manage multiple Ethereum addresses per account |
 | **🎭 Proof Registration** | Register AI prompts, outputs, and model metadata with cryptographic hashing |
 | **🎨 Authorship NFTs** | Automatically mint soulbound ERC-721 tokens for each registered proof |
 | **✅ Proof Verification** | Verify any registered proof using proof ID or content hash |
-| **� Public Proof Explorer** | Browse all registered proofs with advanced search and filters |
+| **🔍 DID Verification** | Public verification of decentralized identities via DID or wallet address |
+| **🌐 Public Proof Explorer** | Browse all registered proofs with advanced search and filters |
 | **�📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
 | **👤 Profile Management** | Manage account settings, linked wallets, and user preferences |
 | **📄 Certificate Generation** | Download professional PDF certificates with QR codes for any proof |
@@ -67,14 +71,15 @@
 ### Technical Features
 
 - **Hybrid Authentication**: Firebase Auth for Web2 + MetaMask for Web3 identity
-- **Smart Contract**: Solidity-based proof registry on Sepolia testnet
-- **Database**: PostgreSQL (Supabase) with Prisma ORM for user and proof data
+- **Smart Contracts**: Two Solidity contracts on Sepolia (NeuraMark proof registry + AuthorshipToken NFTs)
+- **DID System**: W3C DID Core v1.0 compliant with IPFS-backed immutable documents
+- **Database**: PostgreSQL (Supabase) with Prisma ORM for users, wallets, proofs, and DIDs
 - **Multi-Wallet Architecture**: One user account can link multiple Ethereum addresses
 - **Wallet Linking Rules**: Enforced one-to-one mapping (one wallet = one user only)
-- **Hash Generation**: Client-side SHA-256 hashing via Web Crypto API
+- **Hash Generation**: Client-side SHA-256 hashing via Web Crypto API for privacy
 - **Gas Optimization**: Minimal on-chain storage to reduce costs
-- **Type Safety**: Full TypeScript implementation
-- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Type Safety**: Full TypeScript implementation with strict mode
+- **Responsive Design**: Mobile-first approach with Tailwind CSS and glassmorphism
 
 ---
 
@@ -83,8 +88,9 @@
 ### Live Application
 
 🌐 **Frontend**: [Your deployed URL here]  
-⚙️ **Smart Contract**: [`0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795`](https://sepolia.etherscan.io/address/0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795)  
-🔗 **Network**: Sepolia Testnet
+⚙️ **NeuraMark Contract**: [`0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795`](https://sepolia.etherscan.io/address/0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795)  
+🎨 **AuthorshipToken Contract**: [`0x951df3400098cB80990B54E6bE651a54f94A36BF`](https://sepolia.etherscan.io/address/0x951df3400098cB80990B54E6bE651a54f94A36BF)  
+🔗 **Network**: Sepolia Testnet (Chain ID: 11155111)
 
 ### Screenshots
 
@@ -154,6 +160,7 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 # Smart Contract Configuration
 NEXT_PUBLIC_CONTRACT_ADDRESS=0xe11b27FAfE1D18a2d9F1ab36314f84D47326A795
+NEXT_PUBLIC_AUTHORSHIP_TOKEN_ADDRESS=0x951df3400098cB80990B54E6bE651a54f94A36BF
 NEXT_PUBLIC_CHAIN_ID=11155111
 
 # Database (Supabase PostgreSQL)
@@ -206,17 +213,41 @@ After signing in:
 
 Navigate to `/register`:
 
-1. **Enter AI Prompt**: The prompt you used to generate content
-2. **Enter AI Output**: The generated content from the AI model
-3. **Specify Model**: Model name (e.g., GPT-4, Claude 3, DALL-E)
-4. **Submit**: Approve MetaMask transaction (small gas fee)
+**Step 1: Enter Content**
+- AI Prompt: The prompt you used to generate content
+- AI Output: The generated content (text, code, or image)
+- Model Info: AI model name (e.g., GPT-4, Claude 3, DALL-E 3, Midjourney)
+- Output Type: Select "text", "image", or "code"
 
-The system will:
+**Step 2: Hash Content**
+- System computes SHA-256 hashes client-side
+- Ensures privacy (raw content never sent to server)
+- Displays prompt hash and output hash
 
-- Hash your prompt and output (SHA-256)
-- Upload content to IPFS
-- Register proof on blockchain
-- Store metadata in database (linked to your user account)
+**Step 3: Upload to IPFS**
+- Content uploaded to Pinata IPFS
+- Returns Content Identifiers (CIDs)
+- Immutable, decentralized storage
+
+**Step 4: Register on Blockchain**
+- Click "Register Proof" button
+- Approve MetaMask transaction (requires Sepolia ETH)
+- Proof registered on NeuraMark smart contract
+- Transaction hash generated
+
+**Step 5: Mint NFT Certificate**
+- Automatically mints soulbound ERC-721 token
+- Token includes on-chain metadata
+- Non-transferable proof of authorship
+- Viewable on OpenSea and Etherscan
+
+**What Happens**:
+- ✅ Proof stored immutably on Ethereum blockchain
+- ✅ Content stored on IPFS with permanent CIDs
+- ✅ Soulbound NFT minted to your wallet
+- ✅ Metadata saved in database linked to your account
+- ✅ Your DID updated with new proof reference
+- ✅ PDF certificate available for download
 
 ### 4. Manage Your Profile
 
@@ -259,6 +290,60 @@ Navigate to `/verify`:
    - Content hashes
    - IPFS links
    - Etherscan transaction
+
+---
+
+## 🆔 Decentralized Identifiers (DID)
+
+### Unified Web2 + Web3 Identity
+
+NeuraMark implements a **W3C DID Core v1.0 compliant** decentralized identifier system that creates a unified, verifiable identity linking your Firebase account, Ethereum wallets, and all registered proofs.
+
+#### Key Features
+
+- **🔐 W3C Compliant**: Follows DID Core v1.0 specification for interoperability
+- **🔄 Auto-Generation**: DID created automatically on account signup
+- **🔗 Unified Identity**: Links Firebase UID, multiple wallets, and all proofs in one DID
+- **📦 IPFS Storage**: DID documents stored immutably on IPFS with CID references
+- **📱 QR Codes**: Generate scannable QR codes for easy identity sharing
+- **✅ Public Verification**: Anyone can verify DIDs via `/verify-did` page
+- **📊 Proof Tracking**: DID automatically updates when you register new proofs
+- **💼 Wallet Management**: DID syncs when you link/unlink wallets
+
+#### DID Format
+
+```text
+did:neuramark:<userId>
+```
+
+**Example**: `did:neuramark:abc123xyz456`
+
+#### Usage
+
+**Viewing Your DID**:
+1. Sign in to your account
+2. Navigate to `/profile`
+3. Your DID is displayed in the DID section with:
+   - DID identifier (copyable)
+   - Verified proof count
+   - Linked wallets count
+   - IPFS document link
+   - QR code generator
+
+**Verifying a DID**:
+1. Navigate to `/verify-did`
+2. Enter a DID identifier (`did:neuramark:...`) OR a wallet address
+3. View complete DID document including:
+   - All linked wallets
+   - Registered proofs list
+   - Verification methods
+   - IPFS CID
+   - Creation timestamp
+
+**Dashboard Integration**:
+- Your dashboard shows "DID-Linked Proofs" statistic
+- Displays total proofs associated with your DID
+- Updates in real-time as you register new proofs
 
 ---
 
@@ -332,7 +417,106 @@ The dashboard now features a dedicated **"Your Authorship Certificates"** sectio
 
 ---
 
-## �🏗️ Architecture
+## 🆔 Decentralized Identifier (DID-Lite) System
+
+### Unified Web2 + Web3 Identity
+
+NeuraMark implements a **DID-Lite system** that creates a unified decentralized identifier for each user, linking their Firebase account (Web2) with their Ethereum wallets (Web3) and all verified AI proofs.
+
+#### Key Features
+
+- **🌐 Universal Identity**: One DID represents your entire NeuraMark identity
+- **🔗 Cross-Platform**: Links email authentication with multiple wallet addresses
+- **📦 IPFS Storage**: DID documents are immutably stored on IPFS
+- **✅ Proof Aggregation**: All your verified proofs are linked to your DID
+- **📱 QR Code Verification**: Generate QR codes for easy identity verification
+- **🔐 Cryptographic Signatures**: Optional wallet signatures for DID documents
+- **🔍 Public Verification**: Anyone can verify a DID via wallet or DID ID
+
+#### DID Document Structure
+
+```json
+{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:neuramark:clx1234567890",
+  "name": "User Display Name",
+  "email": "user@example.com",
+  "wallets": ["0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb3"],
+  "verifiedProofs": [
+    {
+      "proofId": "0x1a2b3c...",
+      "ipfsCID": "QmX...",
+      "model": "GPT-4",
+      "timestamp": "2025-10-21T12:00:00.000Z",
+      "txHash": "0xabc..."
+    }
+  ],
+  "createdAt": "2025-10-21T10:00:00.000Z",
+  "updatedAt": "2025-10-21T12:00:00.000Z"
+}
+```
+
+#### Automatic DID Creation
+
+**When you sign up:**
+1. Create Firebase account (Google OAuth or Email/Password)
+2. DID is automatically generated with format: `did:neuramark:<userId>`
+3. Initial DID document is created with your email and display name
+4. Document is uploaded to IPFS and CID stored in database
+
+**When you link a wallet:**
+1. Connect MetaMask wallet
+2. DID document is updated with new wallet address
+3. Updated document re-uploaded to IPFS (new CID)
+4. All changes are immutable via IPFS versioning
+
+**When you register a proof:**
+1. Proof is registered on blockchain
+2. Proof metadata automatically added to your DID document
+3. DID document re-uploaded to IPFS
+4. Proof count incremented in database
+
+#### DID Verification
+
+Navigate to `/verify-did` to verify any identity:
+
+1. **Enter DID**: `did:neuramark:clx1234567890`
+2. **Or Wallet Address**: `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb3`
+3. **View Results**:
+   - Complete DID document
+   - All linked wallets
+   - All verified proofs with timestamps
+   - IPFS storage link
+   - QR code for mobile verification
+
+#### API Endpoints
+
+- **POST `/api/did/create`**: Create new DID (automatic on signup)
+- **GET `/api/did/get?didId=<did>`**: Fetch DID by DID ID
+- **GET `/api/did/get?wallet=<address>`**: Fetch DID by wallet address
+- **PATCH `/api/did/update`**: Update DID (add proof, add/remove wallet)
+
+#### Integration in Dashboard
+
+Your profile and dashboard display:
+- **DID Badge**: Shows your DID with copy-to-clipboard
+- **Proof Count**: Total verified proofs linked to your DID
+- **Wallet Count**: Number of linked Ethereum addresses
+- **IPFS Link**: Direct link to your DID document on IPFS
+- **QR Code Button**: Generate scannable QR code for verification
+
+#### Benefits
+
+✅ **Portable Identity**: Your DID can be used across platforms  
+✅ **Immutable History**: All proofs permanently linked to your identity  
+✅ **Privacy-Preserving**: Only you control what's in your DID  
+✅ **Verifiable**: Anyone can verify your identity and proofs  
+✅ **Multi-Wallet**: Link multiple wallets to one identity  
+✅ **Future-Proof**: Based on W3C DID standards
+
+---
+
+## 🏗️ Architecture
 
 ### Technology Stack
 

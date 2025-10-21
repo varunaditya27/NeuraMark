@@ -181,3 +181,184 @@ export async function searchProofsByModel(
 export async function disconnectPrisma() {
   await prisma.$disconnect();
 }
+
+// ==================== DID Functions ====================
+
+export interface DIDRecord {
+  id: string;
+  didId: string;
+  userId: string;
+  didDocument: Record<string, unknown>; // JSON type
+  ipfsCID: string | null;
+  signature: string | null;
+  proofCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Create a new DID record in the database
+ */
+export async function createDID(didData: {
+  didId: string;
+  userId: string;
+  didDocument: Record<string, unknown>;
+  ipfsCID?: string;
+  signature?: string;
+  proofCount?: number;
+}): Promise<DIDRecord> {
+  try {
+    const did = await prisma.dID.create({
+      data: {
+        didId: didData.didId,
+        userId: didData.userId,
+        didDocument: didData.didDocument,
+        ipfsCID: didData.ipfsCID,
+        signature: didData.signature,
+        proofCount: didData.proofCount || 0,
+      },
+    });
+    console.log(`✅ DID created: ${did.didId}`);
+    return did as DIDRecord;
+  } catch (error) {
+    console.error("❌ Error creating DID:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get DID by userId
+ */
+export async function getDIDByUserId(userId: string): Promise<DIDRecord | null> {
+  try {
+    const did = await prisma.dID.findUnique({
+      where: { userId },
+    });
+    return did as DIDRecord | null;
+  } catch (error) {
+    console.error("❌ Error fetching DID by userId:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get DID by didId
+ */
+export async function getDIDByDIDId(didId: string): Promise<DIDRecord | null> {
+  try {
+    const did = await prisma.dID.findUnique({
+      where: { didId },
+    });
+    return did as DIDRecord | null;
+  } catch (error) {
+    console.error("❌ Error fetching DID by didId:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update DID document
+ */
+export async function updateDID(
+  userId: string,
+  updates: {
+    didDocument?: Record<string, unknown>;
+    ipfsCID?: string;
+    signature?: string;
+    proofCount?: number;
+  }
+): Promise<DIDRecord> {
+  try {
+    const did = await prisma.dID.update({
+      where: { userId },
+      data: {
+        ...updates,
+        updatedAt: new Date(),
+      },
+    });
+    console.log(`✅ DID updated: ${did.didId}`);
+    return did as DIDRecord;
+  } catch (error) {
+    console.error("❌ Error updating DID:", error);
+    throw error;
+  }
+}
+
+/**
+ * Increment proof count for DID
+ */
+export async function incrementDIDProofCount(userId: string): Promise<DIDRecord> {
+  try {
+    const did = await prisma.dID.update({
+      where: { userId },
+      data: {
+        proofCount: { increment: 1 },
+        updatedAt: new Date(),
+      },
+    });
+    console.log(`✅ DID proof count incremented: ${did.didId} (${did.proofCount})`);
+    return did as DIDRecord;
+  } catch (error) {
+    console.error("❌ Error incrementing DID proof count:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get DID by wallet address
+ */
+export async function getDIDByWallet(walletAddress: string): Promise<DIDRecord | null> {
+  try {
+    // Find wallet first
+    const wallet = await prisma.wallet.findUnique({
+      where: { address: walletAddress },
+      include: { user: { include: { did: true } } },
+    });
+
+    if (!wallet || !wallet.user.did) {
+      return null;
+    }
+
+    return wallet.user.did as DIDRecord;
+  } catch (error) {
+    console.error("❌ Error fetching DID by wallet:", error);
+    throw error;
+  }
+}
+
+/**
+ * Check if DID exists for a user
+ */
+export async function didExistsForUser(userId: string): Promise<boolean> {
+  try {
+    const count = await prisma.dID.count({
+      where: { userId },
+    });
+    return count > 0;
+  } catch (error) {
+    console.error("❌ Error checking DID existence:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get user with DID and proofs
+ */
+export async function getUserWithDIDAndProofs(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        did: true,
+        wallets: true,
+        proofs: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error("❌ Error fetching user with DID and proofs:", error);
+    throw error;
+  }
+}

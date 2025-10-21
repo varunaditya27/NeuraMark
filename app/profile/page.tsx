@@ -4,10 +4,12 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Wallet as WalletIcon, Mail, Clock, Shield, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, LogOut } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
+import DIDCard from "@/components/DIDCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOutUser } from "@/lib/firebase";
 import { connectWallet, getAccount, formatAddress } from "@/lib/ethersClient";
 import { useRouter } from "next/navigation";
+import type { DIDDocument } from "@/lib/didClient";
 
 interface LinkedWallet {
   id: string;
@@ -15,6 +17,16 @@ interface LinkedWallet {
   isPrimary: boolean;
   label: string | null;
   createdAt: string;
+}
+
+interface DIDData {
+  id: string;
+  didId: string;
+  didDocument: DIDDocument;
+  ipfsCID: string | null;
+  proofCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ProfilePage() {
@@ -29,6 +41,10 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // DID state
+  const [didData, setDidData] = useState<DIDData | null>(null);
+  const [loadingDID, setLoadingDID] = useState(true);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -36,8 +52,29 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       loadWallets();
+      loadDID();
     }
   }, [user]);
+
+  const loadDID = async () => {
+    setLoadingDID(true);
+    try {
+      if (!user) return;
+
+      const response = await fetch(`/api/did/create?userId=${user.uid}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.did) {
+          setDidData(data.did);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading DID:", err);
+    } finally {
+      setLoadingDID(false);
+    }
+  };
 
   const loadWallets = async () => {
     setLoadingWallets(true);
@@ -301,6 +338,39 @@ export default function ProfilePage() {
             </div>
           </GlassmorphicCard>
         </motion.div>
+
+        {/* DID Section */}
+        {didData && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-8"
+          >
+            <DIDCard
+              didId={didData.didId}
+              didDocument={didData.didDocument}
+              ipfsCID={didData.ipfsCID || undefined}
+              proofCount={didData.proofCount}
+              createdAt={didData.createdAt}
+            />
+          </motion.div>
+        )}
+
+        {loadingDID && !didData && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-8"
+          >
+            <GlassmorphicCard className="p-8">
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+              </div>
+            </GlassmorphicCard>
+          </motion.div>
+        )}
 
         {/* Linked Wallets Section */}
         <motion.div

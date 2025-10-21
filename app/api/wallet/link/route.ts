@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, getDIDByUserId, updateDID } from "@/lib/prisma";
+import { addWalletToDID, uploadDIDToIPFS, type DIDDocument } from "@/lib/didClient";
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,6 +74,26 @@ export async function POST(request: NextRequest) {
         label,
       },
     });
+
+    // Update DID document with new wallet
+    try {
+      const did = await getDIDByUserId(user.id);
+      if (did) {
+        const didDocument = did.didDocument as unknown as DIDDocument;
+        const updatedDocument = addWalletToDID(didDocument, address.toLowerCase());
+        const newIpfsCID = await uploadDIDToIPFS(updatedDocument);
+
+        await updateDID(user.id, {
+          didDocument: updatedDocument as unknown as Record<string, unknown>,
+          ipfsCID: newIpfsCID,
+        });
+
+        console.log(`✅ DID updated with new wallet: ${address}`);
+      }
+    } catch (didError) {
+      console.error("❌ Error updating DID (non-blocking):", didError);
+      // Don't fail wallet linking if DID update fails
+    }
 
     return NextResponse.json({
       success: true,
