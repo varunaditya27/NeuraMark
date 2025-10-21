@@ -370,7 +370,7 @@ function AuthorshipCertificatesSection({ proofs }: { proofs: ProofRecord[] }) {
       id: p.id,
       tokenId: p.tokenId!,
       modelInfo: p.modelInfo,
-      createdAt: p.createdAt.toISOString(),
+      createdAt: p.createdAt, // Already an ISO string from API
       tokenTxHash: p.tokenTxHash || "",
       outputCID: p.outputCID,
       outputType: p.outputType,
@@ -378,8 +378,9 @@ function AuthorshipCertificatesSection({ proofs }: { proofs: ProofRecord[] }) {
       outputHash: p.outputHash,
     }));
 
-  if (tokensData.length === 0) {
-    return null; // Don't show section if no tokens
+  // Only show section if user has proofs (whether they have tokens or not)
+  if (proofs.length === 0) {
+    return null;
   }
 
   return (
@@ -401,11 +402,24 @@ function AuthorshipCertificatesSection({ proofs }: { proofs: ProofRecord[] }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tokensData.map((token, index) => (
-          <TokenCard key={token.id} token={token} index={index} />
-        ))}
-      </div>
+      {tokensData.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tokensData.map((token, index) => (
+            <TokenCard key={token.id} token={token} index={index} />
+          ))}
+        </div>
+      ) : (
+        <GlassmorphicCard className="p-12 text-center">
+          <Award className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+          <h3 className="text-2xl font-semibold text-white mb-2">
+            No NFT Certificates Yet
+          </h3>
+          <p className="text-gray-400 mb-6">
+            Register a new proof to automatically receive a soulbound NFT certificate. 
+            Existing proofs will need to be re-registered to mint tokens.
+          </p>
+        </GlassmorphicCard>
+      )}
 
       {/* Info Card */}
       <motion.div
