@@ -36,9 +36,10 @@
 - **⛓️ Blockchain-Backed**: Immutable proof stored on Ethereum (Sepolia)
 - **📦 IPFS Storage**: Decentralized content storage via Pinata
 - **🎨 Modern UI**: Glassmorphism design with Framer Motion animations
-- **� Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + Web3 wallets
+- **👤 Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + Web3 wallets
 - **💼 Multi-Wallet Support**: Link multiple Ethereum addresses to one account
 - **🔗 Unified Account Badge**: Innovative UI merging profile and wallet status
+- **📄 PDF Certificates**: Download professional proof certificates with QR codes
 - **🔍 Public Verification**: Anyone can verify registered proofs
 
 ---
@@ -55,6 +56,7 @@
 | **✅ Proof Verification** | Verify any registered proof using proof ID or content hash |
 | **📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
 | **👤 Profile Management** | Manage account settings, linked wallets, and user preferences |
+| **📄 Certificate Generation** | Download professional PDF certificates with QR codes for any proof |
 | **🌐 IPFS Integration** | Decentralized content storage with permanent CID references |
 | **🔗 Blockchain Tracking** | View transaction details on Etherscan |
 
@@ -395,6 +397,7 @@ NeuraMark/
 │   └── api/                 # API routes
 │       ├── register-proof/  # Register proof endpoint
 │       ├── verify-proof/    # Verify proof endpoint
+│       ├── generate-certificate/  # PDF certificate generation
 │       ├── user/create/     # Create user in database
 │       └── wallet/          # Wallet management endpoints
 ├── components/              # React components
@@ -410,6 +413,7 @@ NeuraMark/
 │   ├── firebase.ts          # Firebase auth functions
 │   ├── ethersClient.ts      # Web3 interactions
 │   ├── pinata.ts            # IPFS operations
+│   ├── pdfGenerator.ts      # PDF certificate generation
 │   ├── prisma.ts            # Database queries
 │   └── utils.ts             # Helper functions
 ├── prisma/                  # Database schema
@@ -483,6 +487,7 @@ npm test
 - [ ] Dashboard displays user's registered proofs
 - [ ] Search and filter functionality
 - [ ] Proof verification by ID
+- [ ] Certificate download (PDF with QR code)
 - [ ] IPFS content retrieval
 - [ ] Etherscan transaction links
 
@@ -521,12 +526,15 @@ Contributions are welcome! Please follow these steps:
 - [x] IPFS integration for decentralized storage
 - [x] Dashboard with search and filters
 - [x] Glassmorphism UI with animations
+- [x] Hybrid authentication (Firebase + Web3)
+- [x] Multi-wallet support and management
+- [x] PDF certificate generation with QR codes
 - [ ] Soulbound NFT certificates
 - [ ] AI-based originality scoring
 - [ ] ENS/DID integration
 - [ ] Browser extension for quick proofing
 - [ ] Multi-chain support (Polygon, Arbitrum)
-- [ ] Proof export as verifiable PDF
+- [ ] Batch certificate download
 
 ---
 
