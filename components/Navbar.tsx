@@ -28,6 +28,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
+    { href: "/explorer", label: "Explorer" },
     { href: "/register", label: "Register" },
     { href: "/verify", label: "Verify" },
     { href: "/dashboard", label: "Dashboard" },
