@@ -83,8 +83,8 @@ export async function generateProofCertificate(
   // === HEADER SECTION ===
   
   // NeuraMark Logo Text (centered)
-  page.drawText('🧠 NEURAMARK', {
-    x: width / 2 - 80,
+  page.drawText('NEURAMARK', {
+    x: width / 2 - 70,
     y: currentY,
     size: 28,
     font: boldFont,
@@ -105,12 +105,12 @@ export async function generateProofCertificate(
   currentY -= 25;
 
   // Verification Badge
-  page.drawText('✓ Verified by NeuraMark', {
-    x: width / 2 - 85,
+  page.drawText('VERIFIED BY NEURAMARK', {
+    x: width / 2 - 75,
     y: currentY,
-    size: 12,
-    font: regularFont,
-    color: mutedText,
+    size: 11,
+    font: boldFont,
+    color: secondaryColor,
   });
 
   currentY -= 60;
