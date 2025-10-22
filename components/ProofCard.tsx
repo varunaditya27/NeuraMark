@@ -18,6 +18,9 @@ interface ProofCardProps {
     outputType: string;
     txHash: string;
     createdAt: Date | string;
+    originalityScore?: number | null;
+    originalityAnalysis?: string | null;
+    originalityConfidence?: number | null;
   };
   onView?: () => void;
 }
@@ -99,7 +102,7 @@ export default function ProofCard({ proof }: ProofCardProps) {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
-          <div>
+          <div className="flex-1">
             <h3 className="text-lg font-semibold text-white mb-1">
               {proof.modelInfo}
             </h3>
@@ -108,9 +111,31 @@ export default function ProofCard({ proof }: ProofCardProps) {
               <span>{formatDate(createdDate)}</span>
             </div>
           </div>
-          <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/30">
-            <Shield className="w-4 h-4 text-green-400" />
-            <span className="text-xs font-medium text-green-400">Verified</span>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/30">
+              <Shield className="w-4 h-4 text-green-400" />
+              <span className="text-xs font-medium text-green-400">Verified</span>
+            </div>
+            
+            {/* Originality Score Badge */}
+            {proof.originalityScore !== null && proof.originalityScore !== undefined && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  proof.originalityScore >= 90
+                    ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400"
+                    : proof.originalityScore >= 75
+                    ? "bg-teal-500/20 border border-teal-500/30 text-teal-400"
+                    : proof.originalityScore >= 60
+                    ? "bg-yellow-500/20 border border-yellow-500/30 text-yellow-400"
+                    : "bg-orange-500/20 border border-orange-500/30 text-orange-400"
+                }`}
+                title={proof.originalityAnalysis || "AI-powered originality score"}
+              >
+                {proof.originalityScore.toFixed(0)}% Original
+              </motion.div>
+            )}
           </div>
         </div>
 

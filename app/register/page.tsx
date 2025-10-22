@@ -33,14 +33,20 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  
+  // Originality score state
+  const [originalityScore, setOriginalityScore] = useState<number | null>(null);
+  const [originalityAnalysis, setOriginalityAnalysis] = useState<string | null>(null);
+  const [originalityConfidence, setOriginalityConfidence] = useState<number | null>(null);
 
   // Steps state
   const [steps, setSteps] = useState<RegistrationStep[]>([
     { step: 1, title: "Hash Content", description: "Generate cryptographic hashes", status: "pending" },
     { step: 2, title: "Upload to IPFS", description: "Store content on decentralized storage", status: "pending" },
     { step: 3, title: "Register On-Chain", description: "Create immutable blockchain record", status: "pending" },
-    { step: 4, title: "Store Metadata", description: "Save to database for quick access", status: "pending" },
-    { step: 5, title: "Mint NFT Certificate", description: "Create soulbound authorship token", status: "pending" },
+    { step: 4, title: "Calculate Originality", description: "AI-powered uniqueness analysis", status: "pending" },
+    { step: 5, title: "Store Metadata", description: "Save to database for quick access", status: "pending" },
+    { step: 6, title: "Mint NFT Certificate", description: "Create soulbound authorship token", status: "pending" },
   ]);
 
   useEffect(() => {
@@ -202,8 +208,43 @@ export default function RegisterPage() {
       );
       updateStepStatus(3, "completed");
 
-      // Step 4: Store in database
+      // Step 4: Calculate Originality Score (AI-powered analysis)
       updateStepStatus(4, "active");
+      let originalityData = null;
+      try {
+        const actualOutput = outputType === "text" ? output : `[Image: ${imageFile?.name}]`;
+        
+        const originalityResponse = await fetch("/api/calculate-originality", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt,
+            output: actualOutput,
+            modelInfo,
+            proofId: blockchainResult.proofId,
+          }),
+        });
+
+        if (originalityResponse.ok) {
+          originalityData = await originalityResponse.json();
+          setOriginalityScore(originalityData.score);
+          setOriginalityAnalysis(originalityData.analysis);
+          setOriginalityConfidence(originalityData.confidence);
+          console.log(`🤖 Originality Score: ${originalityData.score}% (Confidence: ${originalityData.confidence}%)`);
+          console.log(`📝 Analysis: ${originalityData.analysis}`);
+        } else {
+          console.warn("Originality scoring failed (non-critical), continuing...");
+        }
+        updateStepStatus(4, "completed");
+      } catch (originalityError) {
+        console.warn("Originality scoring error (non-critical):", originalityError);
+        updateStepStatus(4, "completed"); // Don't fail registration if AI analysis fails
+      }
+
+      // Step 5: Store in database
+      updateStepStatus(5, "active");
       const storeResponse = await fetch("/api/store-proof", {
         method: "POST",
         headers: {
@@ -219,6 +260,11 @@ export default function RegisterPage() {
           outputCID,
           outputType,
           txHash: blockchainResult.txHash,
+          ...(originalityData && {
+            originalityScore: originalityData.score,
+            originalityAnalysis: originalityData.analysis,
+            originalityConfidence: originalityData.confidence,
+          }),
         }),
       });
 
@@ -229,10 +275,10 @@ export default function RegisterPage() {
 
       const storeData = await storeResponse.json();
       console.log("✅ Proof stored in database:", storeData);
-      updateStepStatus(4, "completed");
+      updateStepStatus(5, "completed");
 
-      // Step 5: Mint Authorship Token (Soulbound NFT)
-      updateStepStatus(5, "active");
+      // Step 6: Mint Authorship Token (Soulbound NFT)
+      updateStepStatus(6, "active");
       try {
         const { mintAuthorshipToken } = await import("@/lib/authorshipTokenClient");
         const { BrowserProvider } = await import("ethers");
@@ -270,12 +316,12 @@ export default function RegisterPage() {
           console.warn("Failed to update proof with token info, but token was minted");
         }
 
-        updateStepStatus(5, "completed");
+        updateStepStatus(6, "completed");
       } catch (tokenError) {
         console.error("Token minting error (non-critical):", tokenError);
         // Don't fail the entire registration if token minting fails
         // The proof is already registered, token can be minted later
-        updateStepStatus(5, "error");
+        updateStepStatus(6, "error");
       }
 
       setTxHash(blockchainResult.txHash);
@@ -288,6 +334,9 @@ export default function RegisterPage() {
         setModelInfo("");
         setImageFile(null);
         setImagePreview(null);
+        setOriginalityScore(null);
+        setOriginalityAnalysis(null);
+        setOriginalityConfidence(null);
         setSteps((prev) => prev.map((s) => ({ ...s, status: "pending" })));
       }, 3000);
     } catch (err) {
@@ -505,24 +554,84 @@ export default function RegisterPage() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="p-4 rounded-xl bg-green-500/20 border border-green-500/30"
+                      className="space-y-3"
                     >
-                      <div className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-green-200 text-sm font-medium mb-1">
-                            Proof registered successfully!
-                          </p>
-                          <a
-                            href={`https://sepolia.etherscan.io/tx/${txHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-green-300 hover:text-green-200 underline"
-                          >
-                            View on Etherscan
-                          </a>
+                      <div className="p-4 rounded-xl bg-green-500/20 border border-green-500/30">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-green-200 text-sm font-medium mb-1">
+                              Proof registered successfully!
+                            </p>
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-green-300 hover:text-green-200 underline"
+                            >
+                              View on Etherscan
+                            </a>
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Originality Score Display */}
+                      {originalityScore !== null && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className={`p-4 rounded-xl border ${
+                            originalityScore >= 90
+                              ? "bg-emerald-500/20 border-emerald-500/30"
+                              : originalityScore >= 75
+                              ? "bg-teal-500/20 border-teal-500/30"
+                              : originalityScore >= 60
+                              ? "bg-yellow-500/20 border-yellow-500/30"
+                              : "bg-orange-500/20 border-orange-500/30"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold text-white">
+                                  {originalityScore.toFixed(0)}%
+                                </span>
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                  originalityScore >= 90
+                                    ? "bg-emerald-500/30 text-emerald-200"
+                                    : originalityScore >= 75
+                                    ? "bg-teal-500/30 text-teal-200"
+                                    : originalityScore >= 60
+                                    ? "bg-yellow-500/30 text-yellow-200"
+                                    : "bg-orange-500/30 text-orange-200"
+                                }`}>
+                                  {originalityScore >= 90
+                                    ? "Highly Original"
+                                    : originalityScore >= 75
+                                    ? "Original"
+                                    : originalityScore >= 60
+                                    ? "Moderately Original"
+                                    : "Low Originality"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-white/90 text-xs font-medium mb-1">
+                                AI Originality Analysis
+                              </p>
+                              <p className="text-white/70 text-xs leading-relaxed">
+                                {originalityAnalysis || "Content uniqueness verified through AI analysis."}
+                              </p>
+                              {originalityConfidence !== null && (
+                                <p className="text-white/50 text-xs mt-2">
+                                  Confidence: {originalityConfidence.toFixed(0)}%
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
