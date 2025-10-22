@@ -45,6 +45,8 @@
 - **🔍 Public Proof Explorer**: Browse all proofs with real-time stats, search, and filters
 - **✅ Public Verification**: Verify registered proofs and DIDs via dedicated verification pages
 - **📊 DID-Linked Proofs**: Unified identity linking all Web2 + Web3 accounts and proofs
+- **🤖 AI-Powered Originality Score**: Gemini AI analyzes content uniqueness (0-100% score with confidence)
+- **🏷️ ENS Integration**: Display human-readable ENS names (e.g., vitalik.eth) instead of wallet addresses
 
 ---
 
@@ -67,6 +69,8 @@
 | **📄 Certificate Generation** | Download professional PDF certificates with QR codes for any proof |
 | **🌐 IPFS Integration** | Decentralized content storage with permanent CID references |
 | **🔗 Blockchain Tracking** | View transaction details on Etherscan |
+| **🤖 AI Originality Analysis** | Gemini AI compares proofs and generates 0-100% uniqueness score |
+| **🏷️ ENS Name Resolution** | Display human-readable ENS names (e.g., vitalik.eth) instead of addresses |
 
 ### Technical Features
 
@@ -76,6 +80,7 @@
 - **Database**: PostgreSQL (Supabase) with Prisma ORM for users, wallets, proofs, and DIDs
 - **Multi-Wallet Architecture**: One user account can link multiple Ethereum addresses
 - **Wallet Linking Rules**: Enforced one-to-one mapping (one wallet = one user only)
+- **ENS Resolution**: Automatic ENS name lookup with 1-hour caching for user-friendly address display
 - **Hash Generation**: Client-side SHA-256 hashing via Web Crypto API for privacy
 - **Gas Optimization**: Minimal on-chain storage to reduce costs
 - **Type Safety**: Full TypeScript implementation with strict mode
@@ -177,6 +182,9 @@ NEXT_PUBLIC_ALCHEMY_KEY=your_alchemy_api_key
 
 # Etherscan (for verification)
 ETHERSCAN_API_KEY=your_etherscan_api_key
+
+# Gemini AI (for originality scoring)
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ### Get Your Credentials
@@ -186,6 +194,7 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 3. **Pinata**: [https://pinata.cloud](https://pinata.cloud) - Sign up and get API keys
 4. **Alchemy**: [https://alchemy.com](https://alchemy.com) - Create app for Sepolia network
 5. **Etherscan**: [https://etherscan.io/apis](https://etherscan.io/apis) - Get API key for contract verification
+6. **Gemini AI**: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) - Get API key for originality scoring
 
 ---
 
@@ -235,7 +244,14 @@ Navigate to `/register`:
 - Proof registered on NeuraMark smart contract
 - Transaction hash generated
 
-**Step 5: Mint NFT Certificate**
+**Step 5: AI Originality Analysis** ⭐ NEW!
+- Gemini AI compares your content against existing proofs
+- Returns 0-100% originality score with detailed analysis
+- Color-coded badge (🟢 90%+ = Highly Original → 🔴 <40% = Low Originality)
+- Includes confidence level and similar proof detection
+- Non-blocking: Registration succeeds even if AI unavailable
+
+**Step 6: Mint NFT Certificate**
 - Automatically mints soulbound ERC-721 token
 - Token includes on-chain metadata
 - Non-transferable proof of authorship
@@ -244,6 +260,7 @@ Navigate to `/register`:
 **What Happens**:
 - ✅ Proof stored immutably on Ethereum blockchain
 - ✅ Content stored on IPFS with permanent CIDs
+- ✅ AI originality score calculated (e.g., "92% Original")
 - ✅ Soulbound NFT minted to your wallet
 - ✅ Metadata saved in database linked to your account
 - ✅ Your DID updated with new proof reference
@@ -816,10 +833,9 @@ Contributions are welcome! Please follow these steps:
 - [x] Multi-wallet support and management
 - [x] PDF certificate generation with QR codes
 - [x] Public proof explorer with advanced search
-- [x] PDF certificate generation with QR codes
-- [ ] Soulbound NFT certificates
-- [ ] AI-based originality scoring
-- [ ] ENS/DID integration
+- [x] Soulbound NFT certificates  
+- [x] AI-powered originality scoring (Gemini API)
+- [ ] ENS (Ethereum Name Service) integration
 - [ ] Browser extension for quick proofing
 - [ ] Multi-chain support (Polygon, Arbitrum)
 - [ ] Batch certificate download
