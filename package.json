@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@digitalbazaar/ed25519-signature-2020": "^5.4.0",
+    "@digitalbazaar/ed25519-verification-key-2020": "^4.2.0",
+    "@digitalbazaar/vc": "^7.2.0",
     "@ensdomains/ensjs": "^4.0.2",
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.17.1",
@@ -17,6 +20,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "did-resolver": "^4.1.0",
     "ethers": "^6.15.0",
     "firebase": "^12.4.0",
     "framer-motion": "^12.23.24",
