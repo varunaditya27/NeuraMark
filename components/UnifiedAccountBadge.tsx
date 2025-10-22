@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { signOutUser } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { connectWallet, getAccount, formatAddress } from "@/lib/ethersClient";
+import { getDisplayName } from "@/lib/ensClient";
 
 interface LinkedWallet {
   id: string;
@@ -23,6 +24,7 @@ export default function UnifiedAccountBadge() {
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [loadingWallets, setLoadingWallets] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [ensName, setEnsName] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +33,20 @@ export default function UnifiedAccountBadge() {
       checkConnectedWallet();
     }
   }, [user]);
+
+  // Resolve ENS name for connected/primary wallet
+  useEffect(() => {
+    const primaryWallet = wallets.find(w => w.isPrimary);
+    const displayWallet = connectedWallet || primaryWallet?.address;
+    
+    if (displayWallet) {
+      getDisplayName(displayWallet).then(name => {
+        setEnsName(name);
+      });
+    } else {
+      setEnsName(null);
+    }
+  }, [connectedWallet, wallets]);
 
   // Listen for MetaMask account changes
   useEffect(() => {
@@ -211,7 +227,7 @@ export default function UnifiedAccountBadge() {
           {displayWallet ? (
             <span className={`text-xs font-mono flex items-center gap-1 ${isWalletActive ? 'text-teal-300' : 'text-gray-400'}`}>
               <Wallet className="w-3 h-3" />
-              {formatAddress(displayWallet)}
+              {ensName || formatAddress(displayWallet)}
               {!isWalletActive && <span className="text-[10px] text-gray-500 ml-1">(Linked)</span>}
             </span>
           ) : (
@@ -277,7 +293,7 @@ export default function UnifiedAccountBadge() {
                     <div className="flex items-center gap-2 flex-1">
                       <Wallet className={`w-4 h-4 ${isWalletActive ? 'text-teal-400' : 'text-gray-400'}`} />
                       <span className="font-mono text-white text-sm">
-                        {formatAddress(displayWallet)}
+                        {ensName || formatAddress(displayWallet)}
                       </span>
                       {!isWalletActive && (
                         <span className="text-xs text-gray-500 px-2 py-0.5 rounded-full bg-gray-800/50">

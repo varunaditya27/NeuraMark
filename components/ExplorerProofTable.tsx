@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ExternalLink, 
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ExplorerProof, formatTimestamp, shortenAddress } from "@/lib/fetchProofs";
 import QRCode from "qrcode";
+import { preloadENSNames, getDisplayName } from "@/lib/ensClient";
 
 interface ExplorerProofTableProps {
   proofs: ExplorerProof[];
@@ -42,6 +43,29 @@ export default function ExplorerProofTable({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<{ url: string; dataUrl: string } | null>(null);
+  const [ensNames, setEnsNames] = useState<Map<string, string>>(new Map());
+
+  // Preload ENS names for all visible creators
+  useEffect(() => {
+    const addresses = proofs.map(p => p.creator);
+    
+    async function loadENSNames() {
+      const names = new Map<string, string>();
+      
+      // Preload to cache
+      await preloadENSNames(addresses);
+      
+      // Resolve each address
+      for (const address of addresses) {
+        const displayName = await getDisplayName(address);
+        names.set(address, displayName);
+      }
+      
+      setEnsNames(names);
+    }
+    
+    loadENSNames();
+  }, [proofs]);
 
   const toggleRow = (proofId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -154,12 +178,12 @@ export default function ExplorerProofTable({
                       </div>
 
                       {/* Main Content */}
-                      <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-4 gap-3">
                         {/* Creator */}
                         <div>
                           <div className="text-xs text-gray-400 mb-1">Creator</div>
                           <div className="font-mono text-sm text-white truncate">
-                            {shortenAddress(proof.creator, 6)}
+                            {ensNames.get(proof.creator) || shortenAddress(proof.creator, 6)}
                           </div>
                         </div>
 
@@ -169,6 +193,26 @@ export default function ExplorerProofTable({
                           <div className="text-sm text-white font-medium truncate">
                             {proof.modelInfo}
                           </div>
+                        </div>
+
+                        {/* Originality Score */}
+                        <div>
+                          <div className="text-xs text-gray-400 mb-1">Originality</div>
+                          {proof.originalityScore !== null && proof.originalityScore !== undefined ? (
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              proof.originalityScore >= 90
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                : proof.originalityScore >= 75
+                                ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
+                                : proof.originalityScore >= 60
+                                ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                                : "bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                            }`}>
+                              {proof.originalityScore.toFixed(0)}%
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">N/A</div>
+                          )}
                         </div>
 
                         {/* Timestamp */}
@@ -243,6 +287,43 @@ export default function ExplorerProofTable({
                               link={`https://gateway.pinata.cloud/ipfs/${proof.outputCID}`}
                             />
                           </div>
+
+                          {/* Originality Analysis (if available) */}
+                          {proof.originalityScore !== null && proof.originalityScore !== undefined && (
+                            <div className={`p-4 rounded-lg border ${
+                              proof.originalityScore >= 90
+                                ? "bg-emerald-500/10 border-emerald-500/30"
+                                : proof.originalityScore >= 75
+                                ? "bg-teal-500/10 border-teal-500/30"
+                                : proof.originalityScore >= 60
+                                ? "bg-yellow-500/10 border-yellow-500/30"
+                                : "bg-orange-500/10 border-orange-500/30"
+                            }`}>
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0">
+                                  <div className="text-2xl font-bold text-white">
+                                    {proof.originalityScore.toFixed(0)}%
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Originality
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium text-white mb-1">
+                                    AI Analysis
+                                  </div>
+                                  <div className="text-sm text-gray-300 leading-relaxed">
+                                    {proof.originalityAnalysis || "Content uniqueness verified through AI analysis."}
+                                  </div>
+                                  {proof.originalityConfidence !== null && proof.originalityConfidence !== undefined && (
+                                    <div className="text-xs text-gray-400 mt-2">
+                                      Confidence: {proof.originalityConfidence.toFixed(0)}%
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Actions */}
                           <div className="flex flex-wrap gap-3 pt-2">

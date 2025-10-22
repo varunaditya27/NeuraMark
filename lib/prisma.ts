@@ -20,6 +20,7 @@ export interface ProofRecord {
   id: string;
   proofId: string;
   wallet: string;
+  userId?: string | null;
   modelInfo: string;
   promptHash: string;
   outputHash: string;
@@ -29,6 +30,11 @@ export interface ProofRecord {
   txHash: string;
   tokenId?: string | null;
   tokenTxHash?: string | null;
+  originalityScore?: number | null;
+  originalityAnalysis?: string | null;
+  originalityConfidence?: number | null;
+  vcId?: string | null;
+  vcIpfsCID?: string | null;
   createdAt: Date;
 }
 
@@ -45,6 +51,9 @@ export async function storeProof(proofData: {
   outputCID: string;
   outputType: string;
   txHash: string;
+  originalityScore?: number;
+  originalityAnalysis?: string;
+  originalityConfidence?: number;
 }): Promise<ProofRecord> {
   try {
     const proof = await prisma.proof.create({
