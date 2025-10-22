@@ -130,6 +130,67 @@ export const uploadJSONToIPFS = async (
 };
 
 /**
+ * Upload JSON string to IPFS via Pinata (for Verifiable Credentials)
+ * @param jsonString - The JSON string to upload
+ * @param name - The name for the JSON file
+ * @returns Full Pinata response with IpfsHash
+ */
+export const uploadJSON = async (
+  jsonString: string,
+  name: string
+): Promise<{ IpfsHash: string; PinSize: number; Timestamp: string }> => {
+  try {
+    if (!PINATA_API_KEY && !PINATA_JWT) {
+      throw new Error("Pinata API credentials not found in environment variables");
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (PINATA_JWT) {
+      headers["Authorization"] = `Bearer ${PINATA_JWT}`;
+    } else if (PINATA_API_KEY && PINATA_SECRET_API_KEY) {
+      headers["pinata_api_key"] = PINATA_API_KEY;
+      headers["pinata_secret_api_key"] = PINATA_SECRET_API_KEY;
+    }
+
+    const jsonData = JSON.parse(jsonString);
+
+    const data = {
+      pinataContent: jsonData,
+      pinataMetadata: {
+        name: name,
+        keyvalues: {
+          project: "NeuraMark",
+          type: "verifiable-credential",
+        },
+      },
+      pinataOptions: {
+        cidVersion: 1,
+      },
+    };
+
+    const response = await axios.post(
+      "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+      data,
+      { headers }
+    );
+
+    console.log(`✅ Verifiable Credential uploaded to IPFS: ${response.data.IpfsHash}`);
+
+    return response.data;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorData = error && typeof error === 'object' && 'response' in error 
+      ? (error as { response?: { data?: unknown } }).response?.data 
+      : undefined;
+    console.error("❌ Error uploading JSON to IPFS:", errorData || errorMessage);
+    throw new Error(`Failed to upload JSON to IPFS: ${errorMessage}`);
+  }
+};
+
+/**
  * Retrieve content from IPFS via Pinata Gateway
  * @param cid - The IPFS CID
  * @returns The content as string

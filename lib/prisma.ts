@@ -20,6 +20,7 @@ export interface ProofRecord {
   id: string;
   proofId: string;
   wallet: string;
+  userId?: string | null;
   modelInfo: string;
   promptHash: string;
   outputHash: string;
@@ -32,6 +33,8 @@ export interface ProofRecord {
   originalityScore?: number | null;
   originalityAnalysis?: string | null;
   originalityConfidence?: number | null;
+  vcId?: string | null;
+  vcIpfsCID?: string | null;
   createdAt: Date;
 }
 

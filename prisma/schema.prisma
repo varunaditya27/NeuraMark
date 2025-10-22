@@ -55,6 +55,8 @@ model Proof {
   originalityScore    Float?   // AI-powered originality score (0-100)
   originalityAnalysis String?  // AI analysis explanation
   originalityConfidence Float? // Confidence in the originality score (0-100)
+  vcId                String?  // W3C Verifiable Credential ID (urn:uuid:...)
+  vcIpfsCID           String?  // IPFS CID of the VC document
   createdAt           DateTime @default(now())
 
   @@index([wallet])
@@ -63,6 +65,7 @@ model Proof {
   @@index([createdAt])
   @@index([tokenId])
   @@index([originalityScore])
+  @@index([vcId])
 }
 
 model DID {
