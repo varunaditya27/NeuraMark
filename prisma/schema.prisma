@@ -38,27 +38,31 @@ model Wallet {
 }
 
 model Proof {
-  id         String   @id @default(cuid())
-  proofId    String   @unique
-  wallet     String
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  modelInfo  String
-  promptHash String
-  outputHash String
-  promptCID  String
-  outputCID  String
-  outputType String   @default("text") // "text" or "image"
-  txHash     String
-  tokenId    String?  // NFT token ID (from AuthorshipToken contract)
-  tokenTxHash String? // Transaction hash for token minting
-  createdAt  DateTime @default(now())
+  id                  String   @id @default(cuid())
+  proofId             String   @unique
+  wallet              String
+  userId              String?
+  user                User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  modelInfo           String
+  promptHash          String
+  outputHash          String
+  promptCID           String
+  outputCID           String
+  outputType          String   @default("text") // "text" or "image"
+  txHash              String
+  tokenId             String?  // NFT token ID (from AuthorshipToken contract)
+  tokenTxHash         String? // Transaction hash for token minting
+  originalityScore    Float?   // AI-powered originality score (0-100)
+  originalityAnalysis String?  // AI analysis explanation
+  originalityConfidence Float? // Confidence in the originality score (0-100)
+  createdAt           DateTime @default(now())
 
   @@index([wallet])
   @@index([userId])
   @@index([proofId])
   @@index([createdAt])
   @@index([tokenId])
+  @@index([originalityScore])
 }
 
 model DID {

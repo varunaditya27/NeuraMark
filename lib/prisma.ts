@@ -29,6 +29,9 @@ export interface ProofRecord {
   txHash: string;
   tokenId?: string | null;
   tokenTxHash?: string | null;
+  originalityScore?: number | null;
+  originalityAnalysis?: string | null;
+  originalityConfidence?: number | null;
   createdAt: Date;
 }
 
@@ -45,6 +48,9 @@ export async function storeProof(proofData: {
   outputCID: string;
   outputType: string;
   txHash: string;
+  originalityScore?: number;
+  originalityAnalysis?: string;
+  originalityConfidence?: number;
 }): Promise<ProofRecord> {
   try {
     const proof = await prisma.proof.create({

@@ -23,6 +23,9 @@ export interface ExplorerProof {
   promptCID: string;
   outputCID: string;
   etherscanUrl: string;
+  originalityScore?: number | null;
+  originalityAnalysis?: string | null;
+  originalityConfidence?: number | null;
 }
 
 /**
@@ -93,6 +96,9 @@ export async function fetchAllProofs(filters?: ProofFilters): Promise<{
         promptCID: proof.promptCID,
         outputCID: proof.outputCID,
         etherscanUrl: `https://sepolia.etherscan.io/tx/${proof.txHash}`,
+        originalityScore: proof.originalityScore ?? null,
+        originalityAnalysis: proof.originalityAnalysis ?? null,
+        originalityConfidence: proof.originalityConfidence ?? null,
       };
     });
     

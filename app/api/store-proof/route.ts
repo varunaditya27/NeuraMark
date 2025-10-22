@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
       outputCID,
       outputType,
       txHash,
+      originalityScore,
+      originalityAnalysis,
+      originalityConfidence,
     } = body;
 
     // Validate required fields
@@ -54,6 +57,9 @@ export async function POST(request: NextRequest) {
       outputCID,
       outputType: outputType || "text",
       txHash,
+      ...(originalityScore !== undefined && { originalityScore }),
+      ...(originalityAnalysis && { originalityAnalysis }),
+      ...(originalityConfidence !== undefined && { originalityConfidence }),
     });
 
     console.log(`✅ Proof metadata stored successfully: ${proof.id}`);
