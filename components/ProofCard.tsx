@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Clock, Shield, FileText, Download, Loader2 } from "lucide-react";
 import GlassmorphicCard from "./GlassmorphicCard";
 import { formatAddress } from "@/lib/ethersClient";
+import { getDisplayName } from "@/lib/ensClient";
 
 interface ProofCardProps {
   proof: {
@@ -27,10 +28,29 @@ interface ProofCardProps {
 
 export default function ProofCard({ proof }: ProofCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [displayName, setDisplayName] = useState<string>(formatAddress(proof.wallet));
 
   const createdDate = typeof proof.createdAt === 'string' 
     ? new Date(proof.createdAt) 
     : proof.createdAt;
+
+  // Resolve ENS name for wallet address
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function resolveENSName() {
+      const name = await getDisplayName(proof.wallet);
+      if (isMounted) {
+        setDisplayName(name);
+      }
+    }
+    
+    resolveENSName();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [proof.wallet]);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -143,7 +163,7 @@ export default function ProofCard({ proof }: ProofCardProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-400">Creator</span>
-            <span className="font-mono text-indigo-400">{formatAddress(proof.wallet)}</span>
+            <span className="font-mono text-indigo-400">{displayName}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-400">Proof ID</span>

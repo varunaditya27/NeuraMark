@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ExternalLink, 
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ExplorerProof, formatTimestamp, shortenAddress } from "@/lib/fetchProofs";
 import QRCode from "qrcode";
+import { preloadENSNames, getDisplayName } from "@/lib/ensClient";
 
 interface ExplorerProofTableProps {
   proofs: ExplorerProof[];
@@ -42,6 +43,29 @@ export default function ExplorerProofTable({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<{ url: string; dataUrl: string } | null>(null);
+  const [ensNames, setEnsNames] = useState<Map<string, string>>(new Map());
+
+  // Preload ENS names for all visible creators
+  useEffect(() => {
+    const addresses = proofs.map(p => p.creator);
+    
+    async function loadENSNames() {
+      const names = new Map<string, string>();
+      
+      // Preload to cache
+      await preloadENSNames(addresses);
+      
+      // Resolve each address
+      for (const address of addresses) {
+        const displayName = await getDisplayName(address);
+        names.set(address, displayName);
+      }
+      
+      setEnsNames(names);
+    }
+    
+    loadENSNames();
+  }, [proofs]);
 
   const toggleRow = (proofId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -159,7 +183,7 @@ export default function ExplorerProofTable({
                         <div>
                           <div className="text-xs text-gray-400 mb-1">Creator</div>
                           <div className="font-mono text-sm text-white truncate">
-                            {shortenAddress(proof.creator, 6)}
+                            {ensNames.get(proof.creator) || shortenAddress(proof.creator, 6)}
                           </div>
                         </div>
 
