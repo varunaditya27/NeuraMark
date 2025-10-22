@@ -35,15 +35,16 @@
 - **🔐 Cryptographic Verification**: SHA-256 hashing ensures content integrity
 - **⛓️ Blockchain-Backed**: Immutable proof stored on Ethereum (Sepolia testnet)
 - **🎨 Soulbound NFT Certificates**: Automatic ERC-721 token minting for each proof (non-transferable)
-- **🆔 Decentralized Identifiers (DID)**: W3C DID Core v1.0 compliant identity system
-- **📦 IPFS Storage**: Decentralized content storage via Pinata (prompts, outputs, DIDs)
+- **� W3C Verifiable Credentials**: Portable, cryptographically-signed proof credentials
+- **�🆔 Decentralized Identifiers (DID)**: W3C DID Core v1.0 compliant identity system
+- **📦 IPFS Storage**: Decentralized content storage via Pinata (prompts, outputs, DIDs, VCs)
 - **🎨 Modern UI**: Glassmorphism design with smooth Framer Motion animations
 - **👤 Hybrid Authentication**: Firebase Auth (Google OAuth + Email/Password) + MetaMask wallets
 - **💼 Multi-Wallet Support**: Link multiple Ethereum addresses to one account
 - **🔗 Unified Account Badge**: Innovative UI merging profile and wallet status
 - **📄 PDF Certificates**: Download professional certificates with QR codes and blockchain verification
 - **🔍 Public Proof Explorer**: Browse all proofs with real-time stats, search, and filters
-- **✅ Public Verification**: Verify registered proofs and DIDs via dedicated verification pages
+- **✅ Public Verification**: Verify registered proofs, DIDs, and VCs via dedicated verification pages
 - **📊 DID-Linked Proofs**: Unified identity linking all Web2 + Web3 accounts and proofs
 - **🤖 AI-Powered Originality Score**: Gemini AI analyzes content uniqueness (0-100% score with confidence)
 - **🏷️ ENS Integration**: Display human-readable ENS names (e.g., vitalik.eth) instead of wallet addresses
@@ -61,8 +62,10 @@
 | **💼 Multi-Wallet Management** | Link and manage multiple Ethereum addresses per account |
 | **🎭 Proof Registration** | Register AI prompts, outputs, and model metadata with cryptographic hashing |
 | **🎨 Authorship NFTs** | Automatically mint soulbound ERC-721 tokens for each registered proof |
+| **🎫 Verifiable Credentials** | Issue W3C-compliant VCs for portable, platform-independent proof verification |
 | **✅ Proof Verification** | Verify any registered proof using proof ID or content hash |
 | **🔍 DID Verification** | Public verification of decentralized identities via DID or wallet address |
+| **🎟️ VC Verification** | Upload and verify W3C Verifiable Credentials from any source |
 | **🌐 Public Proof Explorer** | Browse all registered proofs with advanced search and filters |
 | **�📊 Dashboard** | View all your registered proofs with search, filter, and sort capabilities |
 | **👤 Profile Management** | Manage account settings, linked wallets, and user preferences |
@@ -77,7 +80,8 @@
 - **Hybrid Authentication**: Firebase Auth for Web2 + MetaMask for Web3 identity
 - **Smart Contracts**: Two Solidity contracts on Sepolia (NeuraMark proof registry + AuthorshipToken NFTs)
 - **DID System**: W3C DID Core v1.0 compliant with IPFS-backed immutable documents
-- **Database**: PostgreSQL (Supabase) with Prisma ORM for users, wallets, proofs, and DIDs
+- **Verifiable Credentials**: W3C VC Data Model v1.1 with Ed25519 cryptographic signatures
+- **Database**: PostgreSQL (Supabase) with Prisma ORM for users, wallets, proofs, DIDs, and VCs
 - **Multi-Wallet Architecture**: One user account can link multiple Ethereum addresses
 - **Wallet Linking Rules**: Enforced one-to-one mapping (one wallet = one user only)
 - **ENS Resolution**: Automatic ENS name lookup with 1-hour caching for user-friendly address display
@@ -265,6 +269,32 @@ Navigate to `/register`:
 - ✅ Metadata saved in database linked to your account
 - ✅ Your DID updated with new proof reference
 - ✅ PDF certificate available for download
+- ✅ W3C Verifiable Credential issued for portable verification
+
+### 📜 Three Proof Formats: NFT vs VC vs PDF
+
+NeuraMark provides **three complementary proof formats**, each serving different use cases:
+
+| Format | Purpose | Verification | Portability | Use Case |
+|--------|---------|--------------|-------------|----------|
+| **🎨 Soulbound NFT** | On-chain trophy | Etherscan, OpenSea | Ethereum-only | Showcase blockchain ownership |
+| **🎫 W3C Verifiable Credential** | Digital passport | Any W3C-compliant verifier | **Platform-independent** | Present proofs to any service |
+| **📄 PDF Certificate** | Human document | Visual QR scan | Print/email-friendly | Legal docs, portfolios |
+
+**Why Verifiable Credentials?**
+
+Unlike NFTs (tied to Ethereum) or PDFs (no cryptographic verification), W3C Verifiable Credentials are:
+- ✅ **Self-Sovereign**: You control the credential, not the platform
+- ✅ **Portable**: Works with any identity wallet (not just Ethereum)
+- ✅ **Interoperable**: Standard JSON-LD format recognized globally
+- ✅ **Cryptographically Signed**: Ed25519 signatures prove authenticity
+- ✅ **Independently Verifiable**: Anyone can verify without contacting NeuraMark
+
+**How to Use VCs:**
+1. From your dashboard, click "Download VC" on any proof
+2. Save the JSON file to your identity wallet (e.g., Microsoft Entra, Trinsic)
+3. Present the VC to any service that needs proof verification
+4. They verify the signature using our public DID - no API calls needed!
 
 ### 4. Manage Your Profile
 
