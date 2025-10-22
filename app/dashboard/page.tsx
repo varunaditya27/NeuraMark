@@ -385,7 +385,7 @@ export default function DashboardPage() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.4, delay: index * 0.1 }}
                     >
-                      <ProofCard proof={proof} />
+                      <ProofCard proof={proof} userId={user?.uid} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
