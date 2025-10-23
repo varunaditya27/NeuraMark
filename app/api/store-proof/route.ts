@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Proof metadata stored successfully: ${proof.id}`);
 
     // Update DID document with new proof AND link proof to user
+    let linkedUserId: string | undefined;
     try {
       // Find user by wallet address
       const walletRecord = await prisma.wallet.findUnique({
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
 
       if (walletRecord && walletRecord.user) {
         const userId = walletRecord.user.id;
+        linkedUserId = userId;
         
         // Link proof to user in database
         await prisma.proof.update({
@@ -110,6 +112,40 @@ export async function POST(request: NextRequest) {
     } catch (didError) {
       console.error("❌ Error updating DID (non-blocking):", didError);
       // Don't fail proof storage if DID update fails
+    }
+
+    // Add to vector database for semantic search (non-blocking)
+    try {
+      const { addProofToVectorDB } = await import('@/lib/chromaClient');
+      
+      // Fetch actual prompt and output content from IPFS
+      const [promptResponse, outputResponse] = await Promise.all([
+        fetch(`https://gateway.pinata.cloud/ipfs/${promptCID}?filename=prompt.txt`),
+        fetch(`https://gateway.pinata.cloud/ipfs/${outputCID}?filename=output.txt`)
+      ]);
+
+      if (promptResponse.ok && outputResponse.ok) {
+        const promptText = await promptResponse.text();
+        const outputText = await outputResponse.text();
+
+        // Add to ChromaDB with metadata (including userId if linked)
+        await addProofToVectorDB(
+          proofId,
+          promptText,
+          outputText,
+          {
+            modelInfo,
+            outputType: outputType || "text",
+            wallet: wallet.toLowerCase(),
+            timestamp: new Date().toISOString(),
+            ...(linkedUserId && { userId: linkedUserId }),
+          }
+        );
+        console.log(`✅ Proof added to vector database: ${proofId}`);
+      }
+    } catch (vectorError) {
+      console.error("⚠️ Error adding proof to vector database (non-blocking):", vectorError);
+      // Don't fail proof storage if vector DB fails
     }
 
     return NextResponse.json({
