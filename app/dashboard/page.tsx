@@ -60,12 +60,24 @@ export default function DashboardPage() {
     setLoadingDID(true);
     try {
       const response = await fetch(`/api/did/create?userId=${user.uid}`);
+      
+      // Handle 404 - DID doesn't exist yet (not an error)
+      if (response.status === 404) {
+        console.log("ℹ️ No DID found for user yet");
+        setDidProofCount(0);
+        setDidData(null);
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.did) {
           setDidProofCount(data.did.proofCount || 0);
           setDidData(data.did); // Store full DID data
         }
+      } else {
+        // Log other errors but don't show to user
+        console.error("Error loading DID:", response.status);
       }
     } catch (err) {
       console.error("Error loading DID stats:", err);
