@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Clock, Shield, FileText, Download, Loader2, Key } from "lucide-react";
+import { ExternalLink, Clock, Shield, FileText, Download, Loader2, Key, Copy, Check } from "lucide-react";
 import GlassmorphicCard from "./GlassmorphicCard";
 import { formatAddress } from "@/lib/ethersClient";
 import { getDisplayName } from "@/lib/ensClient";
@@ -31,6 +31,7 @@ export default function ProofCard({ proof, userId }: ProofCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingVC, setIsDownloadingVC] = useState(false);
   const [displayName, setDisplayName] = useState<string>(formatAddress(proof.wallet));
+  const [copiedProofId, setCopiedProofId] = useState(false);
 
   const createdDate = typeof proof.createdAt === 'string' 
     ? new Date(proof.createdAt) 
@@ -62,6 +63,12 @@ export default function ProofCard({ proof, userId }: ProofCardProps) {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  };
+
+  const handleCopyProofId = () => {
+    navigator.clipboard.writeText(proof.proofId);
+    setCopiedProofId(true);
+    setTimeout(() => setCopiedProofId(false), 2000);
   };
 
   /**
@@ -222,9 +229,27 @@ export default function ProofCard({ proof, userId }: ProofCardProps) {
             <span className="text-gray-400">Creator</span>
             <span className="font-mono text-indigo-400">{displayName}</span>
           </div>
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm group">
             <span className="text-gray-400">Proof ID</span>
-            <span className="font-mono text-teal-400">{formatAddress(proof.proofId)}</span>
+            <div className="flex items-center gap-2">
+              <span 
+                className="font-mono text-teal-400 text-xs"
+                title={proof.proofId}
+              >
+                {formatAddress(proof.proofId)}
+              </span>
+              <button
+                onClick={handleCopyProofId}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded"
+                title="Copy full proof ID"
+              >
+                {copiedProofId ? (
+                  <Check className="w-3.5 h-3.5 text-green-400" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-gray-400" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -253,7 +278,7 @@ export default function ProofCard({ proof, userId }: ProofCardProps) {
         {/* Actions */}
         <div className="flex items-center gap-3 pt-3">
           <motion.a
-            href={`https://gateway.pinata.cloud/ipfs/${proof.promptCID}`}
+            href={`https://gateway.pinata.cloud/ipfs/${proof.promptCID}?filename=prompt.txt`}
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.05 }}
@@ -264,7 +289,7 @@ export default function ProofCard({ proof, userId }: ProofCardProps) {
             <ExternalLink className="w-4 h-4" />
           </motion.a>
           <motion.a
-            href={`https://gateway.pinata.cloud/ipfs/${proof.outputCID}`}
+            href={`https://gateway.pinata.cloud/ipfs/${proof.outputCID}${proof.outputType === "image" ? "?filename=output.png" : "?filename=output.txt"}`}
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.05 }}

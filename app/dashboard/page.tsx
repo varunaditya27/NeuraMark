@@ -6,6 +6,7 @@ import { Search, Filter, Loader2, AlertCircle, TrendingUp, Clock, Shield, Award 
 import GlassmorphicCard from "@/components/GlassmorphicCard";
 import ProofCard from "@/components/ProofCard";
 import TokenCard from "@/components/TokenCard";
+import DIDCard from "@/components/DIDCard";
 import { getAccount, isMetaMaskInstalled } from "@/lib/ethersClient";
 import { ProofRecord } from "@/lib/prisma";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +24,28 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   // DID state
+  const [didData, setDidData] = useState<{
+    didId: string;
+    didDocument: {
+      "@context": string;
+      id: string;
+      name: string;
+      email: string;
+      wallets: string[];
+      verifiedProofs: Array<{
+        proofId: string;
+        ipfsCID: string;
+        model: string;
+        timestamp: string;
+        txHash: string;
+      }>;
+      createdAt: string;
+      updatedAt: string;
+    };
+    ipfsCID?: string;
+    proofCount: number;
+    createdAt?: string;
+  } | null>(null);
   const [didProofCount, setDidProofCount] = useState<number>(0);
   const [loadingDID, setLoadingDID] = useState(false);
 
@@ -41,6 +64,7 @@ export default function DashboardPage() {
         const data = await response.json();
         if (data.success && data.did) {
           setDidProofCount(data.did.proofCount || 0);
+          setDidData(data.did); // Store full DID data
         }
       }
     } catch (err) {
@@ -401,6 +425,35 @@ export default function DashboardPage() {
               )}
             </motion.div>
 
+            {/* DID Section */}
+            {didData && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+                className="mt-16"
+              >
+                <div className="flex items-center gap-3 mb-8">
+                  <Shield className="h-8 w-8 text-indigo-400" />
+                  <div>
+                    <h2 className="text-3xl font-bold text-neutral-100">
+                      Your Decentralized Identity
+                    </h2>
+                    <p className="text-gray-400 mt-1">
+                      W3C DID linking your Web2 account with Web3 wallets and proofs
+                    </p>
+                  </div>
+                </div>
+                <DIDCard
+                  didId={didData.didId}
+                  didDocument={didData.didDocument}
+                  ipfsCID={didData.ipfsCID}
+                  proofCount={didData.proofCount}
+                  createdAt={didData.createdAt || new Date().toISOString()}
+                />
+              </motion.div>
+            )}
+
             {/* Authorship Certificates Section */}
             <AuthorshipCertificatesSection proofs={proofs} />
           </>
@@ -419,7 +472,7 @@ function AuthorshipCertificatesSection({ proofs }: { proofs: ProofRecord[] }) {
       id: p.id,
       tokenId: p.tokenId!,
       modelInfo: p.modelInfo,
-      createdAt: p.createdAt, // Already an ISO string from API
+      createdAt: typeof p.createdAt === 'string' ? p.createdAt : p.createdAt.toISOString(),
       tokenTxHash: p.tokenTxHash || "",
       outputCID: p.outputCID,
       outputType: p.outputType,

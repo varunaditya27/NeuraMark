@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Proof metadata stored successfully: ${proof.id}`);
 
-    // Update DID document with new proof
+    // Update DID document with new proof AND link proof to user
     try {
       // Find user by wallet address
       const walletRecord = await prisma.wallet.findUnique({
@@ -74,6 +74,14 @@ export async function POST(request: NextRequest) {
 
       if (walletRecord && walletRecord.user) {
         const userId = walletRecord.user.id;
+        
+        // Link proof to user in database
+        await prisma.proof.update({
+          where: { proofId: proof.proofId },
+          data: { userId: userId },
+        });
+        console.log(`✅ Proof linked to user: ${userId}`);
+
         const did = await getDIDByUserId(userId);
 
         if (did) {

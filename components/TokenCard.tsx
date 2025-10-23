@@ -24,7 +24,7 @@ const AUTHORSHIP_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_AUTHORSHIP_TOKEN_ADDRES
 
 export default function TokenCard({ token, index }: TokenCardProps) {
   const imageUrl = token.outputType === "image" 
-    ? `https://gateway.pinata.cloud/ipfs/${token.outputCID}` 
+    ? `https://gateway.pinata.cloud/ipfs/${token.outputCID}?filename=output.png` 
     : null;
 
   return (
