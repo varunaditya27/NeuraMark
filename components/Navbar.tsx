@@ -31,8 +31,6 @@ export default function Navbar() {
     { href: "/explorer", label: "Explorer" },
     { href: "/register", label: "Register" },
     { href: "/verify", label: "Verify" },
-    { href: "/verify-did", label: "Verify DID" },
-    { href: "/verify-credential", label: "Verify VC" },
     { href: "/dashboard", label: "Dashboard" },
   ];
 
