@@ -79,7 +79,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this proof
-    if (proof.userId !== userId) {
+    // Check userId first, then fall back to wallet ownership for backward compatibility
+    let isOwner = false;
+    
+    if (proof.userId) {
+      // Direct userId match (new proofs)
+      isOwner = proof.userId === userId;
+    } else {
+      // Fallback: Check if user's wallet matches proof wallet (old proofs)
+      const userWallets = await prisma.wallet.findMany({
+        where: { userId: userId },
+        select: { address: true },
+      });
+      
+      const walletAddresses = userWallets.map(w => w.address.toLowerCase());
+      isOwner = walletAddresses.includes(proof.wallet.toLowerCase());
+      
+      // If ownership confirmed via wallet, update the proof with userId
+      if (isOwner) {
+        await prisma.proof.update({
+          where: { proofId: proof.proofId },
+          data: { userId: userId },
+        });
+        console.log(`✅ Migrated proof ${proofId} to userId: ${userId}`);
+      }
+    }
+
+    if (!isOwner) {
       return NextResponse.json(
         { error: 'Unauthorized: You do not own this proof' },
         { status: 403 }
