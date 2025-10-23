@@ -111,7 +111,7 @@ Provide your analysis in this EXACT JSON format:
 Be objective and fair. Most proofs should score 70-95. Only truly derivative or duplicate content should score below 60.`;
 
     // Get Gemini model (using gemini-pro)
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // Generate analysis
     const result = await model.generateContent(analysisPrompt);

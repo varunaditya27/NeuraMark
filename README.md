@@ -47,6 +47,7 @@
 - **✅ Public Verification**: Verify registered proofs, DIDs, and VCs via dedicated verification pages
 - **📊 DID-Linked Proofs**: Unified identity linking all Web2 + Web3 accounts and proofs
 - **🤖 AI-Powered Originality Score**: Gemini AI analyzes content uniqueness (0-100% score with confidence)
+- **🔍 Semantic Search**: ChromaDB + Jina AI embeddings for intelligent content discovery
 - **🏷️ ENS Integration**: Display human-readable ENS names (e.g., vitalik.eth) instead of wallet addresses
 
 ---
@@ -73,6 +74,7 @@
 | **🌐 IPFS Integration** | Decentralized content storage with permanent CID references |
 | **🔗 Blockchain Tracking** | View transaction details on Etherscan |
 | **🤖 AI Originality Analysis** | Gemini AI compares proofs and generates 0-100% uniqueness score |
+| **🔍 Semantic Search** | Find similar proofs using natural language queries via ChromaDB + Jina AI |
 | **🏷️ ENS Name Resolution** | Display human-readable ENS names (e.g., vitalik.eth) instead of addresses |
 
 ### Technical Features
@@ -189,6 +191,14 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 
 # Gemini AI (for originality scoring)
 GEMINI_API_KEY=your_gemini_api_key
+
+# Jina AI (for semantic embeddings)
+JINA_API_KEY=your_jina_api_key
+
+# ChromaDB (for vector storage)
+CHROMA_DB_API_KEY=your_chromadb_api_key
+CHROMA_DB_TENANT_ID=your_tenant_id
+CHROMA_DB_DATABASE_NAME=your_database_name
 ```
 
 ### Get Your Credentials
@@ -199,6 +209,8 @@ GEMINI_API_KEY=your_gemini_api_key
 4. **Alchemy**: [https://alchemy.com](https://alchemy.com) - Create app for Sepolia network
 5. **Etherscan**: [https://etherscan.io/apis](https://etherscan.io/apis) - Get API key for contract verification
 6. **Gemini AI**: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) - Get API key for originality scoring
+7. **Jina AI**: [https://jina.ai](https://jina.ai) - Get API key for semantic embeddings (Optional - for semantic search)
+8. **ChromaDB**: [https://trychroma.com](https://trychroma.com) - Create hosted instance for vector storage (Optional - for semantic search)
 
 ---
 
@@ -325,7 +337,31 @@ Navigate to `/explorer` to browse all registered proofs:
 - **QR Codes**: Generate QR codes for easy mobile verification
 - **Direct Links**: Open proofs on IPFS or Etherscan
 
-### 7. Verify a Proof
+### 7. Use Semantic Search ⭐ NEW!
+
+Find similar proofs using natural language queries powered by AI:
+
+1. Navigate to your **Dashboard**
+2. Click "AI-Powered Semantic Search" button
+3. Enter a natural language query (e.g., "AI-generated sunset images" or "Python sorting algorithms")
+4. View results ranked by similarity score (0-100%)
+5. Explore similar proofs with one click
+
+**How it Works:**
+- **Jina AI** generates 1024-dimensional semantic embeddings for proof content (v3 model)
+- **ChromaDB** stores vector representations in a cloud-hosted database
+- **Cosine similarity** ranks proofs by semantic relevance
+- Works across different wordings and languages (understands meaning, not just keywords)
+
+**Use Cases:**
+- 🔍 Discover related content you've registered
+- 🚫 Check for potential duplicates before registration
+- 📊 Analyze content similarity across your portfolio
+- 🤝 Find proofs using similar AI models or techniques
+
+**Requirements:** ChromaDB and Jina AI credentials (optional - feature gracefully disabled if not configured)
+
+### 8. Verify a Proof
 
 Navigate to `/verify`:
 
