@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, Loader2, AlertCircle, TrendingUp, Clock, Shield, Award } from "lucide-react";
+import { Search, Filter, Loader2, AlertCircle, TrendingUp, Clock, Shield, Award, Sparkles } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
 import ProofCard from "@/components/ProofCard";
 import TokenCard from "@/components/TokenCard";
 import DIDCard from "@/components/DIDCard";
+import SemanticSearchBar from "@/components/SemanticSearchBar";
 import { getAccount, isMetaMaskInstalled } from "@/lib/ethersClient";
 import { ProofRecord } from "@/lib/prisma";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,6 +54,9 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterModel, setFilterModel] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
+  
+  // Semantic search state
+  const [showSemanticSearch, setShowSemanticSearch] = useState(false);
 
   const loadDIDStats = useCallback(async () => {
     if (!user) return;
@@ -288,6 +292,52 @@ export default function DashboardPage() {
               <p className="text-amber-200">
                 Please connect your MetaMask wallet to view your dashboard
               </p>
+            </GlassmorphicCard>
+          </motion.div>
+        )}
+
+        {/* Semantic Search Section */}
+        {walletConnected && !loading && proofs.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-8"
+          >
+            <GlassmorphicCard className="p-6">
+              {!showSemanticSearch ? (
+                <button
+                  onClick={() => setShowSemanticSearch(true)}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl
+                           bg-gradient-to-r from-indigo-600/20 to-teal-600/20 border-2 border-indigo-500/30
+                           hover:from-indigo-600/30 hover:to-teal-600/30 hover:border-indigo-500/50
+                           transition-all duration-300 group"
+                >
+                  <Sparkles className="w-5 h-5 text-indigo-400 group-hover:animate-pulse" />
+                  <span className="text-lg font-semibold text-white">
+                    AI-Powered Semantic Search
+                  </span>
+                  <span className="text-sm text-white/60 hidden md:inline">
+                    Find similar proofs using natural language
+                  </span>
+                </button>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5 text-indigo-400" />
+                      <h3 className="text-lg font-semibold text-white">AI-Powered Semantic Search</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowSemanticSearch(false)}
+                      className="text-white/60 hover:text-white transition-colors text-sm"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <SemanticSearchBar />
+                </div>
+              )}
             </GlassmorphicCard>
           </motion.div>
         )}

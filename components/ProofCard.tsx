@@ -152,6 +152,40 @@ export default function ProofCard({ proof, userId }: ProofCardProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ VC Generation Failed:', errorData);
+        
+        // Show detailed error if debug info is available
+        if (errorData.debug) {
+          const { proofWallet, proofUserId, requestingUserId } = errorData.debug;
+          
+          // Check if the issue is likely an unlinked wallet
+          const isUnlinkedWallet = !proofUserId || proofUserId !== requestingUserId;
+          
+          if (isUnlinkedWallet) {
+            const message = 
+              `⛓️ Wallet Not Linked\n\n` +
+              `This proof was registered with wallet:\n${proofWallet}\n\n` +
+              `To download the Verifiable Credential, you need to:\n` +
+              `1. Click on your profile icon in the top-right\n` +
+              `2. Connect your MetaMask wallet (${proofWallet.slice(0, 10)}...)\n` +
+              `3. The wallet will be automatically linked to your account\n` +
+              `4. Try downloading the VC again\n\n` +
+              `Note: You must use the same wallet that registered this proof.`;
+            alert(message);
+          } else {
+            alert(
+              `Failed to generate Verifiable Credential:\n\n` +
+              `Error: ${errorData.error}\n\n` +
+              `Debug Info:\n` +
+              `- Your User ID: ${requestingUserId}\n` +
+              `- Proof User ID: ${proofUserId || 'Not set'}\n` +
+              `- Proof Wallet: ${proofWallet}`
+            );
+          }
+        } else {
+          alert(`Failed to generate Verifiable Credential: ${errorData.error}`);
+        }
+        
         throw new Error(errorData.error || 'Failed to generate verifiable credential');
       }
 
