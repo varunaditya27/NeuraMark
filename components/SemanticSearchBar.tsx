@@ -1,8 +1,16 @@
 /**
- * Semantic Search Bar Component
+ * Semantic Search Bar Component - NeuraMark Proof-of-Authorship
  * 
- * Allows users to find similar proofs using natural language queries.
- * Uses ChromaDB + Jina AI for vector-based similarity search.
+ * Blockchain Hackathon Feature: Proof-of-Prompt Discovery
+ * 
+ * Capabilities:
+ * - Find similar AI-generated content in decentralized registry
+ * - Verify originality of prompts and outputs
+ * - Detect potential IP conflicts or prior art
+ * - Analyze authorship disputes
+ * - Identify derivative works
+ * 
+ * Technology: ChromaDB + Jina AI (1024-dim semantic embeddings)
  */
 
 "use client";
@@ -20,12 +28,15 @@ interface SimilarProof {
   proofId: string;
   similarity: number;
   document: string;
+  originalityRisk?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   metadata: {
     modelInfo: string;
     outputType: string;
     wallet: string;
     timestamp: string;
     userId?: string;
+    promptHash?: string;
+    outputHash?: string;
   };
   proof: {
     id: number;
@@ -51,6 +62,13 @@ interface SearchResponse {
   count: number;
   query: string;
   threshold: number;
+  originalityAnalysis?: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  hackathonContext?: string;
   error?: string;
   message?: string;
 }
@@ -130,7 +148,7 @@ export default function SemanticSearchBar({ onClose }: SemanticSearchBarProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for similar proofs... (e.g., 'AI-generated sunset images' or 'Python sorting algorithms')"
+            placeholder="🔍 Verify originality: 'sunset landscape' or check authorship: 'Python code for sorting' ⛓️"
             className="w-full px-6 py-4 pl-14 pr-32 rounded-2xl bg-white/5 border-2 border-white/10 
                      text-white placeholder-white/40 backdrop-blur-xl
                      focus:outline-none focus:border-indigo-500/50 focus:bg-white/8
@@ -216,18 +234,48 @@ export default function SemanticSearchBar({ onClose }: SemanticSearchBarProps) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
           >
-            {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">
-                Found {results.length} Similar Proof{results.length !== 1 ? "s" : ""}
-              </h3>
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="text-white/60 hover:text-white transition-colors"
-                >
-                  Close
-                </button>
+            {/* Results Header with Originality Analysis */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-indigo-400" />
+                  Proof-of-Authorship Results: {results.length} Match{results.length !== 1 ? "es" : ""}
+                </h3>
+                {onClose && (
+                  <button
+                    onClick={onClose}
+                    className="text-white/60 hover:text-white transition-colors"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+              
+              {/* Originality Risk Summary (if available from API) */}
+              {(results.some(r => r.originalityRisk)) && (
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <span className="text-white/60">Originality Analysis:</span>
+                  {results.filter(r => r.originalityRisk === 'CRITICAL').length > 0 && (
+                    <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-300">
+                      ⛔ {results.filter(r => r.originalityRisk === 'CRITICAL').length} Critical
+                    </span>
+                  )}
+                  {results.filter(r => r.originalityRisk === 'HIGH').length > 0 && (
+                    <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-300">
+                      ⚠️ {results.filter(r => r.originalityRisk === 'HIGH').length} High Risk
+                    </span>
+                  )}
+                  {results.filter(r => r.originalityRisk === 'MEDIUM').length > 0 && (
+                    <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300">
+                      ℹ️ {results.filter(r => r.originalityRisk === 'MEDIUM').length} Medium Risk
+                    </span>
+                  )}
+                  {results.filter(r => r.originalityRisk === 'LOW').length > 0 && (
+                    <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300">
+                      ✅ {results.filter(r => r.originalityRisk === 'LOW').length} Low Risk
+                    </span>
+                  )}
+                </div>
               )}
             </div>
 
@@ -241,21 +289,44 @@ export default function SemanticSearchBar({ onClose }: SemanticSearchBarProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    {/* Similarity Badge */}
-                    <div className="mb-2 flex items-center gap-2">
+                    {/* Similarity & Originality Risk Badges */}
+                    <div className="mb-2 flex items-center gap-2 flex-wrap">
+                      {/* Similarity Score */}
                       <div
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          result.similarity >= 0.9
-                            ? "bg-emerald-500/20 text-emerald-300"
-                            : result.similarity >= 0.8
-                            ? "bg-teal-500/20 text-teal-300"
-                            : result.similarity >= 0.7
+                          result.similarity >= 0.95
+                            ? "bg-red-500/20 text-red-300"
+                            : result.similarity >= 0.85
+                            ? "bg-orange-500/20 text-orange-300"
+                            : result.similarity >= 0.75
                             ? "bg-yellow-500/20 text-yellow-300"
-                            : "bg-orange-500/20 text-orange-300"
+                            : result.similarity >= 0.7
+                            ? "bg-teal-500/20 text-teal-300"
+                            : "bg-emerald-500/20 text-emerald-300"
                         }`}
                       >
-                        {(result.similarity * 100).toFixed(1)}% Match
+                        {(result.similarity * 100).toFixed(1)}% Similar
                       </div>
+                      
+                      {/* Originality Risk Badge */}
+                      {result.originalityRisk && (
+                        <div
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                            result.originalityRisk === 'CRITICAL'
+                              ? "bg-red-500/10 border-red-500/30 text-red-300"
+                              : result.originalityRisk === 'HIGH'
+                              ? "bg-orange-500/10 border-orange-500/30 text-orange-300"
+                              : result.originalityRisk === 'MEDIUM'
+                              ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-300"
+                              : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                          }`}
+                        >
+                          {result.originalityRisk === 'CRITICAL' && '⛔ Critical Risk'}
+                          {result.originalityRisk === 'HIGH' && '⚠️ High Risk'}
+                          {result.originalityRisk === 'MEDIUM' && 'ℹ️ Medium Risk'}
+                          {result.originalityRisk === 'LOW' && '✅ Low Risk'}
+                        </div>
+                      )}
                     </div>
 
                     {/* Proof Card */}
