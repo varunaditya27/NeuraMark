@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/did/create?userId=<userId>
- * Get DID for a user (if exists)
+ * Get DID for a user (if exists), or create it if missing
  */
 export async function GET(request: NextRequest) {
   try {
@@ -98,13 +98,75 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const did = await getDIDByUserId(userId);
+    // Try to get existing DID
+    let did = await getDIDByUserId(userId);
 
+    // If DID doesn't exist, create it automatically (migration for old users)
     if (!did) {
-      return NextResponse.json(
-        { success: false, error: "DID not found" },
-        { status: 404 }
-      );
+      console.log(`⚠️ DID not found for user ${userId}, creating automatically...`);
+      
+      try {
+        // Get user info from database
+        // NOTE: userId could be either Supabase User.id OR Firebase UID
+        // Try both to support different calling patterns
+        const { prisma } = await import('@/lib/prisma');
+        let user = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { wallets: true },
+        });
+
+        // If not found by id, try firebaseUid (common case)
+        if (!user) {
+          console.log(`   Trying to find user by firebaseUid: ${userId}`);
+          user = await prisma.user.findUnique({
+            where: { firebaseUid: userId },
+            include: { wallets: true },
+          });
+        }
+
+        if (!user) {
+          console.error(`   ❌ User not found in database (tried id and firebaseUid)`);
+          return NextResponse.json(
+            { success: false, error: "User not found" },
+            { status: 404 }
+          );
+        }
+        
+        console.log(`   ✅ Found user: ${user.id} (firebaseUid: ${user.firebaseUid})`);
+
+        // Generate DID ID
+        const didId = generateDID(user.id);
+
+        // Create DID document with user's current wallets
+        const wallets = user.wallets.map(w => w.address);
+        const didDocument = createDIDDocument(
+          user.id,
+          user.email || '',
+          user.displayName || 'Anonymous',
+          wallets
+        );
+
+        // Upload to IPFS
+        const ipfsCID = await uploadDIDToIPFS(didDocument);
+
+        // Store in database
+        const { createDID: createDIDRecord } = await import('@/lib/prisma');
+        did = await createDIDRecord({
+          didId,
+          userId: user.id,
+          didDocument: didDocument as unknown as Record<string, unknown>,
+          ipfsCID,
+          proofCount: 0,
+        });
+
+        console.log(`✅ DID created automatically for user ${userId}: ${didId}`);
+      } catch (error) {
+        console.error('❌ Error auto-creating DID:', error);
+        return NextResponse.json(
+          { success: false, error: "Failed to create DID" },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({

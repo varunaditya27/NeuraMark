@@ -82,35 +82,82 @@ export async function POST(request: NextRequest) {
     // Check userId first, then fall back to wallet ownership for backward compatibility
     let isOwner = false;
     
+    console.log(`🔍 [VC Issue] Checking ownership for proof ${proofId}`);
+    console.log(`   - Requesting user (could be firebaseUid or User.id): ${userId}`);
+    console.log(`   - Proof userId: ${proof.userId || 'null'}`);
+    console.log(`   - Proof wallet: ${proof.wallet}`);
+    
+    // Get the actual Supabase User.id from firebaseUid (userId might be either)
+    let actualUserId = userId;
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: userId },           // Direct Supabase User.id
+          { firebaseUid: userId },  // Firebase UID
+        ],
+      },
+    });
+    
+    if (!user) {
+      console.log(`❌ [VC Issue] User not found in database`);
+      return NextResponse.json(
+        { 
+          error: 'User not found',
+          debug: {
+            requestingUserId: userId,
+          }
+        },
+        { status: 404 }
+      );
+    }
+    
+    actualUserId = user.id; // Use the Supabase User.id
+    console.log(`   - Resolved to Supabase User.id: ${actualUserId} (firebaseUid: ${user.firebaseUid})`);
+    
     if (proof.userId) {
       // Direct userId match (new proofs)
-      isOwner = proof.userId === userId;
+      isOwner = proof.userId === actualUserId;
+      console.log(`   - Direct userId match: ${isOwner}`);
     } else {
       // Fallback: Check if user's wallet matches proof wallet (old proofs)
       const userWallets = await prisma.wallet.findMany({
-        where: { userId: userId },
+        where: { userId: actualUserId },
         select: { address: true },
       });
       
+      console.log(`   - User's linked wallets: ${userWallets.map(w => w.address).join(', ') || 'none'}`);
+      
       const walletAddresses = userWallets.map(w => w.address.toLowerCase());
       isOwner = walletAddresses.includes(proof.wallet.toLowerCase());
+      
+      console.log(`   - Wallet match: ${isOwner}`);
       
       // If ownership confirmed via wallet, update the proof with userId
       if (isOwner) {
         await prisma.proof.update({
           where: { proofId: proof.proofId },
-          data: { userId: userId },
+          data: { userId: actualUserId },
         });
-        console.log(`✅ Migrated proof ${proofId} to userId: ${userId}`);
+        console.log(`✅ Migrated proof ${proofId} to userId: ${actualUserId}`);
       }
     }
 
     if (!isOwner) {
+      console.log(`❌ [VC Issue] Ownership verification failed`);
       return NextResponse.json(
-        { error: 'Unauthorized: You do not own this proof' },
+        { 
+          error: 'Unauthorized: You do not own this proof',
+          debug: {
+            proofWallet: proof.wallet,
+            proofUserId: proof.userId || null,
+            requestingUserId: userId,
+          }
+        },
         { status: 403 }
       );
     }
+    
+    console.log(`✅ [VC Issue] Ownership verified for user ${userId}`);
 
     // Generate user DID
     const userDID = generateUserDID(userId);
