@@ -240,9 +240,23 @@ export async function createDID(didData: {
  */
 export async function getDIDByUserId(userId: string): Promise<DIDRecord | null> {
   try {
-    const did = await prisma.dID.findUnique({
+    // Try direct userId lookup first (Supabase User.id)
+    let did = await prisma.dID.findUnique({
       where: { userId },
     });
+    
+    // If not found, try finding user by firebaseUid and then get their DID
+    if (!did) {
+      const user = await prisma.user.findUnique({
+        where: { firebaseUid: userId },
+        include: { did: true },
+      });
+      
+      if (user?.did) {
+        did = user.did;
+      }
+    }
+    
     return did as DIDRecord | null;
   } catch (error) {
     console.error("❌ Error fetching DID by userId:", error);

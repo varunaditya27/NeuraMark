@@ -110,13 +110,60 @@ export function truncateText(text: string, maxTokens: number = 410): string {
 }
 
 /**
- * Prepare proof content for embedding
- * Combines prompt and output with smart truncation
+ * Prepare proof content for embedding with NeuraMark-specific context
+ * Enhances semantic understanding for proof-of-authorship and originality detection
+ * 
+ * Context added:
+ * - AI authorship markers
+ * - Content type indicators
+ * - Blockchain proof context
  */
-export function prepareProofForEmbedding(prompt: string, output: string): string {
-  // Allocate tokens: 200 for prompt, 200 for output (leaving buffer)
-  const truncatedPrompt = truncateText(prompt, 200);
-  const truncatedOutput = truncateText(output, 200);
+export function prepareProofForEmbedding(
+  prompt: string, 
+  output: string,
+  metadata?: {
+    modelInfo?: string;
+    outputType?: string;
+    timestamp?: string;
+  }
+): string {
+  // Allocate tokens: 150 for prompt, 150 for output, 100 for metadata context
+  const truncatedPrompt = truncateText(prompt, 150);
+  const truncatedOutput = truncateText(output, 150);
   
-  return `PROMPT: ${truncatedPrompt}\n\nOUTPUT: ${truncatedOutput}`;
+  // Build context-aware embedding text for better semantic matching
+  let embeddingText = `AI-GENERATED CONTENT PROOF:\n\n`;
+  
+  // Add metadata context for better semantic clustering
+  if (metadata?.modelInfo) {
+    embeddingText += `MODEL: ${metadata.modelInfo}\n`;
+  }
+  if (metadata?.outputType) {
+    embeddingText += `TYPE: ${metadata.outputType}\n`;
+  }
+  
+  embeddingText += `\nPROMPT: ${truncatedPrompt}\n\n`;
+  embeddingText += `OUTPUT: ${truncatedOutput}`;
+  
+  return embeddingText;
+}
+
+/**
+ * Prepare search query with NeuraMark-specific context
+ * Enhances query to match against proof-of-authorship embeddings
+ */
+export function prepareSearchQuery(query: string, filters?: {
+  modelType?: string;
+  contentType?: string;
+}): string {
+  let enhancedQuery = `AI-GENERATED CONTENT: ${query}`;
+  
+  if (filters?.modelType) {
+    enhancedQuery += ` [MODEL: ${filters.modelType}]`;
+  }
+  if (filters?.contentType) {
+    enhancedQuery += ` [TYPE: ${filters.contentType}]`;
+  }
+  
+  return enhancedQuery;
 }
