@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         const promptText = await promptResponse.text();
         const outputText = await outputResponse.text();
 
-        // Add to ChromaDB with metadata (including userId if linked)
+        // Add to ChromaDB with blockchain-specific metadata
         await addProofToVectorDB(
           proofId,
           promptText,
@@ -138,10 +138,12 @@ export async function POST(request: NextRequest) {
             outputType: outputType || "text",
             wallet: wallet.toLowerCase(),
             timestamp: new Date().toISOString(),
+            promptHash,
+            outputHash,
             ...(linkedUserId && { userId: linkedUserId }),
           }
         );
-        console.log(`✅ Proof added to vector database: ${proofId}`);
+        console.log(`✅ [NeuraMark] Proof-of-authorship indexed for semantic search: ${proofId.slice(0, 10)}...`);
       }
     } catch (vectorError) {
       console.error("⚠️ Error adding proof to vector database (non-blocking):", vectorError);
