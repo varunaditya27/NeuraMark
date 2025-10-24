@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 /**
  * Global Prisma Client instance
@@ -221,7 +221,7 @@ export async function createDID(didData: {
       data: {
         didId: didData.didId,
         userId: didData.userId,
-        didDocument: didData.didDocument,
+        didDocument: didData.didDocument as Prisma.InputJsonValue,
         ipfsCID: didData.ipfsCID,
         signature: didData.signature,
         proofCount: didData.proofCount || 0,
@@ -292,12 +292,19 @@ export async function updateDID(
   }
 ): Promise<DIDRecord> {
   try {
+    const data: Record<string, unknown> = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    
+    // Type assertion for didDocument field if present
+    if (updates.didDocument) {
+      data.didDocument = updates.didDocument as Prisma.InputJsonValue;
+    }
+
     const did = await prisma.dID.update({
       where: { userId },
-      data: {
-        ...updates,
-        updatedAt: new Date(),
-      },
+      data,
     });
     console.log(`✅ DID updated: ${did.didId}`);
     return did as DIDRecord;

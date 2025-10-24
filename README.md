@@ -47,7 +47,7 @@
 - **✅ Public Verification**: Verify registered proofs, DIDs, and VCs via dedicated verification pages
 - **📊 DID-Linked Proofs**: Unified identity linking all Web2 + Web3 accounts and proofs
 - **🤖 AI-Powered Originality Score**: Gemini AI analyzes content uniqueness (0-100% score with confidence)
-- **🔍 Semantic Search**: ChromaDB + Jina AI embeddings for intelligent content discovery
+- ** 🔍 Semantic Search **: ChromaDB + Jina AI v3 (1024-dim) with Four-tier originality risk, pre-registration checks, authorship disputes
 - **🏷️ ENS Integration**: Display human-readable ENS names (e.g., vitalik.eth) instead of wallet addresses
 
 ---

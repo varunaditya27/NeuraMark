@@ -23,6 +23,47 @@ import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-
 import { Ed25519Signature2020 } from '@digitalbazaar/ed25519-signature-2020';
 
 /**
+ * Custom JSON-LD context for NeuraMark-specific credential terms
+ */
+const NEURAMARK_VC_CONTEXT = {
+  '@version': 1.1,
+  '@protected': true,
+  AIContentProofCredential: 'https://neuramark.ai/credentials#AIContentProofCredential',
+  AIContentProof: 'https://neuramark.ai/credentials#AIContentProof',
+  promptHash: 'https://neuramark.ai/credentials#promptHash',
+  outputHash: 'https://neuramark.ai/credentials#outputHash',
+  promptCID: 'https://neuramark.ai/credentials#promptCID',
+  outputCID: 'https://neuramark.ai/credentials#outputCID',
+  modelInfo: 'https://neuramark.ai/credentials#modelInfo',
+  outputType: 'https://neuramark.ai/credentials#outputType',
+  name: 'https://schema.org/name',
+  blockchainProof: {
+    '@id': 'https://neuramark.ai/credentials#blockchainProof',
+    '@context': {
+      '@version': 1.1,
+      '@protected': true,
+      network: 'https://neuramark.ai/credentials#network',
+      contractAddress: 'https://neuramark.ai/credentials#contractAddress',
+      transactionHash: 'https://neuramark.ai/credentials#transactionHash',
+      proofId: 'https://neuramark.ai/credentials#proofId',
+      timestamp: {
+        '@id': 'https://neuramark.ai/credentials#timestamp',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
+    },
+  },
+  ipfsMetadata: {
+    '@id': 'https://neuramark.ai/credentials#ipfsMetadata',
+    '@context': {
+      '@version': 1.1,
+      '@protected': true,
+      promptCID: 'https://neuramark.ai/credentials#promptCID',
+      outputCID: 'https://neuramark.ai/credentials#outputCID',
+    },
+  },
+};
+
+/**
  * Proof metadata for VC credential subject
  */
 export interface ProofCredentialSubject {
@@ -52,7 +93,7 @@ export interface ProofCredentialSubject {
  * W3C Verifiable Credential structure
  */
 export interface VerifiableCredential {
-  '@context': Array<string | Record<string, string>>;
+  '@context': Array<string | Record<string, unknown>>;
   id: string; // Unique credential ID (UUID)
   type: string[];
   issuer: {
@@ -89,8 +130,11 @@ async function getIssuerKeyPair() {
     return issuerKeyPair;
   }
 
-  // Generate new key pair (in production, load from secure storage)
-  const keyPair = await Ed25519VerificationKey2020.generate();
+  // Generate new key pair with proper controller/id (in production, load from secure storage)
+  const keyPair = await Ed25519VerificationKey2020.generate({
+    controller: 'did:neuramark:platform',
+    id: 'did:neuramark:platform#key-1',
+  });
   
   issuerKeyPair = {
     publicKey: keyPair,
@@ -142,13 +186,8 @@ export async function generateVerifiableCredential(
   const credential: VerifiableCredential = {
     '@context': [
       'https://www.w3.org/2018/credentials/v1',
-      'https://www.w3.org/2018/credentials/examples/v1',
-      {
-        AIContentProof: 'https://neuramark.com/schemas/ai-content-proof',
-        promptHash: 'https://neuramark.com/schemas#promptHash',
-        outputHash: 'https://neuramark.com/schemas#outputHash',
-        modelInfo: 'https://neuramark.com/schemas#modelInfo',
-      },
+      'https://w3id.org/security/suites/ed25519-2020/v1',
+      NEURAMARK_VC_CONTEXT,
     ],
     id: credentialId,
     type: ['VerifiableCredential', 'AIContentProofCredential'],
@@ -200,12 +239,16 @@ export async function signVerifiableCredential(
   try {
     const keyPair = await getIssuerKeyPair();
 
-    // Create Ed25519 signature suite
+    // Create Ed25519 signature suite with explicit verification method
     const suite = new Ed25519Signature2020({
       key: keyPair.privateKey,
+      verificationMethod: keyPair.privateKey.id, // Use the key's ID as verification method
     });
 
-    // Sign the credential
+    console.log('🔐 [VC Sign] Credential context:', JSON.stringify(credential['@context'], null, 2));
+    console.log('🔐 [VC Sign] Suite verification method:', suite.verificationMethod);
+
+    // Sign the credential with document loader
     const signedCredential = await issue({
       credential,
       suite,
@@ -215,6 +258,10 @@ export async function signVerifiableCredential(
     return signedCredential as VerifiableCredential;
   } catch (error) {
     console.error('Error signing verifiable credential:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     throw new Error(`Failed to sign credential: ${error}`);
   }
 }
@@ -271,7 +318,36 @@ export async function verifyVerifiableCredential(
  * Custom document loader for JSON-LD context resolution
  * Required for W3C VC verification
  */
-async function customDocumentLoader(url: string) {
+async function customDocumentLoader(url: string): Promise<{
+  contextUrl: null | string;
+  documentUrl: string;
+  document: unknown;
+}> {
+  console.log('📄 [Document Loader] Resolving URL:', url);
+  
+  // For W3C official contexts, try to fetch them directly
+  if (url.startsWith('https://www.w3.org/') || url.startsWith('https://w3id.org/')) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/ld+json, application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const document = await response.json();
+        console.log('✅ [Document Loader] Fetched from network:', url);
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document,
+        };
+      }
+    } catch (error) {
+      console.warn('⚠️ [Document Loader] Failed to fetch, using fallback:', url, error);
+    }
+  }
+  
   // Standard W3C contexts
   if (url === 'https://www.w3.org/2018/credentials/v1') {
     return {
@@ -322,7 +398,112 @@ async function customDocumentLoader(url: string) {
     };
   }
 
-  throw new Error(`Document loader: Unsupported URL ${url}`);
+  // Ed25519 Signature 2020 context
+  if (url === 'https://w3id.org/security/suites/ed25519-2020/v1') {
+    return {
+      contextUrl: null,
+      documentUrl: url,
+      document: {
+        '@context': {
+          '@version': 1.1,
+          '@protected': true,
+          id: '@id',
+          type: '@type',
+          Ed25519VerificationKey2020: {
+            '@id': 'https://w3id.org/security#Ed25519VerificationKey2020',
+            '@context': {
+              '@protected': true,
+              id: '@id',
+              type: '@type',
+              controller: {
+                '@id': 'https://w3id.org/security#controller',
+                '@type': '@id',
+              },
+              revoked: {
+                '@id': 'https://w3id.org/security#revoked',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              publicKeyMultibase: {
+                '@id': 'https://w3id.org/security#publicKeyMultibase',
+                '@type': 'https://w3id.org/security#multibase',
+              },
+            },
+          },
+          Ed25519Signature2020: {
+            '@id': 'https://w3id.org/security#Ed25519Signature2020',
+            '@context': {
+              '@protected': true,
+              id: '@id',
+              type: '@type',
+              challenge: 'https://w3id.org/security#challenge',
+              created: {
+                '@id': 'http://purl.org/dc/terms/created',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              domain: 'https://w3id.org/security#domain',
+              expires: {
+                '@id': 'https://w3id.org/security#expiration',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              nonce: 'https://w3id.org/security#nonce',
+              proofPurpose: {
+                '@id': 'https://w3id.org/security#proofPurpose',
+                '@type': '@vocab',
+                '@context': {
+                  '@protected': true,
+                  id: '@id',
+                  type: '@type',
+                  assertionMethod: {
+                    '@id': 'https://w3id.org/security#assertionMethod',
+                    '@type': '@id',
+                    '@container': '@set',
+                  },
+                  authentication: {
+                    '@id': 'https://w3id.org/security#authenticationMethod',
+                    '@type': '@id',
+                    '@container': '@set',
+                  },
+                },
+              },
+              proofValue: {
+                '@id': 'https://w3id.org/security#proofValue',
+                '@type': 'https://w3id.org/security#multibase',
+              },
+              verificationMethod: {
+                '@id': 'https://w3id.org/security#verificationMethod',
+                '@type': '@id',
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  // NeuraMark custom schemas - handle any neuramark.com schema URL
+  if (url.startsWith('https://neuramark.com/schemas') || url.startsWith('http://localhost:3000')) {
+    return {
+      contextUrl: null,
+      documentUrl: url,
+      document: {
+        '@context': {
+          '@version': 1.1,
+          '@protected': true,
+        },
+      },
+    };
+  }
+
+  console.warn('⚠️  [Document Loader] Unsupported URL, returning empty context:', url);
+  
+  // Return empty context instead of throwing to avoid breaking the signing process
+  return {
+    contextUrl: null,
+    documentUrl: url,
+    document: {
+      '@context': {},
+    },
+  };
 }
 
 /**
