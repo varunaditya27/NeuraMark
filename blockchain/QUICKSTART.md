@@ -1,156 +1,53 @@
-# NeuraMark - Quick Start Guide
+# Blockchain Backend Quick Start
+
+This guide provides a fast path for developers to get the NeuraMark blockchain backend up and running. For a more comprehensive understanding of the smart contracts and their functions, please see the [main `README.md`](./README.md).
 
 ## ⚡ 5-Minute Setup
 
 ### Prerequisites
-- Node.js 18+ installed
+- Node.js 18+
 - MetaMask wallet with Sepolia ETH
-- Alchemy/Infura account (for RPC)
+- An RPC URL from a service like [Alchemy](https://alchemy.com) or [Infura](https://infura.io)
 
-### Step 1: Install Dependencies (30 seconds)
+### Step 1: Install Dependencies
 ```bash
-cd hardhat-example
 npm install
 ```
 
-### Step 2: Configure Environment (2 minutes)
+### Step 2: Configure Environment
+Create a `.env` file from the example:
 ```bash
-# Copy template
 cp .env.example .env
-
-# Edit .env and add:
-# - SEPOLIA_RPC_URL (from Alchemy/Infura)
-# - SEPOLIA_PRIVATE_KEY (from MetaMask)
 ```
+Then, edit the `.env` file and add your:
+- `SEPOLIA_RPC_URL` (from Alchemy or Infura)
+- `SEPOLIA_PRIVATE_KEY` (from MetaMask)
 
-### Step 3: Test Everything (1 minute)
+### Step 3: Compile and Test
 ```bash
-# Compile contracts
+# Compile the smart contracts
 npx hardhat compile
 
-# Run tests
-npx hardhat test test/NeuraMark.ts
+# Run the test suite
+npx hardhat test
 ```
 
-Expected output:
-```
-✔ Should deploy successfully
-✔ Should register a new proof successfully
-✔ Should emit ProofRegistered event
-... (14 tests passing)
-```
-
-### Step 4: Deploy to Sepolia (1 minute)
+### Step 4: Deploy to Sepolia
 ```bash
 npx hardhat ignition deploy ignition/modules/NeuraMark.ts --network sepolia
 ```
+The deployed contract address will be printed in your console.
 
-Your contract address will be saved to `.env` automatically!
+## 🚀 Next Steps
 
----
+With the smart contracts deployed, you can now begin interacting with them from your client application. Refer to the **Client-Side Interaction (`ethers.js`)** section in the [main `README.md`](./README.md) for code examples on how to:
 
-## 🎯 What You Got
-
-### ✅ Smart Contract
-- Deployed to Sepolia testnet
-- Immutable proof storage
-- Event emission for tracking
-- Full input validation
-
-### ✅ IPFS Integration
-- Ready-to-use Pinata utilities
-- Upload functions for text/JSON
-- Retrieve functions for CIDs
-
-### ✅ Database Setup
-- Prisma schema configured
-- PostgreSQL-ready
-- Indexed for fast queries
-
-### ✅ Frontend Utilities
-- MetaMask connection
-- Contract interaction functions
-- Network switching helpers
-- Event listeners
-
----
-
-## 📝 Next: Integrate with Frontend
-
-### In your Next.js app:
-
-```typescript
-// 1. Connect Wallet
-import { connectWallet } from '@/hardhat-example/lib/ethersClient';
-const address = await connectWallet();
-
-// 2. Upload to IPFS
-import { uploadToIPFS } from '@/hardhat-example/lib/pinata';
-const promptCID = await uploadToIPFS(promptText, 'prompt.txt');
-const outputCID = await uploadToIPFS(outputText, 'output.txt');
-
-// 3. Generate Hashes
-const promptHash = await crypto.subtle.digest('SHA-256', 
-  new TextEncoder().encode(promptText)
-).then(buf => '0x' + [...new Uint8Array(buf)].map(b => 
-  b.toString(16).padStart(2, '0')
-).join(''));
-
-// 4. Register On-Chain
-import { registerProof } from '@/hardhat-example/lib/ethersClient';
-const result = await registerProof(
-  promptHash,
-  outputHash,
-  modelInfo,
-  promptCID,
-  outputCID
-);
-
-// 5. Store in Database
-import { storeProof } from '@/hardhat-example/lib/prisma';
-await storeProof({
-  proofId: result.proofId,
-  wallet: address,
-  modelInfo,
-  promptHash,
-  outputHash,
-  promptCID,
-  outputCID,
-  txHash: result.txHash,
-});
-```
-
----
+- Connect to the contract
+- Register a proof
+- Verify a proof
 
 ## 🔗 Useful Links
 
 - **Sepolia Faucet**: https://sepoliafaucet.com
-- **View Your Contract**: https://sepolia.etherscan.io/address/YOUR_CONTRACT_ADDRESS
-- **Pinata Dashboard**: https://app.pinata.cloud
-- **Alchemy Dashboard**: https://dashboard.alchemy.com
-
----
-
-## 🆘 Common Issues
-
-### "Gas estimation failed"
-→ Get more Sepolia ETH from faucet
-
-### "Contract not found"
-→ Run: `npx hardhat compile`
-
-### "Network not found"
-→ Switch MetaMask to Sepolia testnet
-
-### "Prisma error"
-→ Run: `npx prisma generate`
-
----
-
-## 📚 Full Documentation
-
-See `README.md` and `IMPLEMENTATION_SUMMARY.md` for complete details.
-
----
-
-**Ready to build! 🚀**
+- **Etherscan**: https://sepolia.etherscan.io
+- **Hardhat Documentation**: https://hardhat.org/
