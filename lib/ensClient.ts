@@ -39,9 +39,10 @@ let publicClient: PublicClient | null = null;
  */
 function getPublicClient(): PublicClient {
   if (!publicClient) {
+    console.log('🔍 [ENS] Initializing Viem client for mainnet ENS resolution');
     publicClient = createPublicClient({
       chain: mainnet,
-      transport: http(), // Uses default public mainnet RPC
+      transport: http('https://eth.llamarpc.com'), // Use reliable public mainnet RPC
     });
   }
   return publicClient;
@@ -102,16 +103,20 @@ export async function resolveENS(address: string): Promise<string | null> {
   // Check cache first
   if (isCacheValid(addressLower)) {
     const cached = ensCache.get(addressLower);
+    console.log(`✅ [ENS] Cache hit for ${addressLower}: ${cached || 'null'}`);
     return cached ?? null;
   }
   
   try {
+    console.log(`🔍 [ENS] Resolving ${addressLower}...`);
     const client = getPublicClient();
     
     // Perform reverse ENS lookup
     const ensName = await client.getEnsName({
       address: address as Address,
     });
+    
+    console.log(`${ensName ? '✅' : '❌'} [ENS] Resolution result for ${addressLower}: ${ensName || 'No ENS name found'}`);
     
     // Cache the result (even if null)
     ensCache.set(addressLower, ensName);
@@ -122,7 +127,7 @@ export async function resolveENS(address: string): Promise<string | null> {
     
     return ensName;
   } catch (error) {
-    console.error(`ENS resolution failed for ${address}:`, error);
+    console.error(`❌ [ENS] Resolution failed for ${address}:`, error);
     
     // Cache null result to avoid repeated failed lookups
     ensCache.set(addressLower, null);
@@ -175,8 +180,11 @@ export async function resolveENSBatch(
 export async function getDisplayName(address: string): Promise<string> {
   if (!address) return '';
   
+  console.log(`🔍 [ENS] getDisplayName called for: ${address}`);
   const ensName = await resolveENS(address);
-  return ensName || formatAddress(address);
+  const result = ensName || formatAddress(address);
+  console.log(`📝 [ENS] Display name for ${address}: ${result}`);
+  return result;
 }
 
 /**

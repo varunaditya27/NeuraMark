@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Wallet as WalletIcon, Mail, Clock, Shield, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, LogOut } from "lucide-react";
 import GlassmorphicCard from "@/components/GlassmorphicCard";
 import DIDCard from "@/components/DIDCard";
+import ENSAddress from "@/components/ENSAddress";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOutUser } from "@/lib/firebase";
-import { connectWallet, getAccount, formatAddress } from "@/lib/ethersClient";
+import { connectWallet } from "@/lib/ethersClient";
 import { useRouter } from "next/navigation";
 import type { DIDDocument } from "@/lib/didClient";
 
@@ -54,6 +55,7 @@ export default function ProfilePage() {
       loadWallets();
       loadDID();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadDID = async () => {
@@ -436,17 +438,21 @@ export default function ProfilePage() {
                         <WalletIcon className="w-5 h-5 text-indigo-400" />
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">
-                            {formatAddress(wallet.address)}
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <ENSAddress 
+                            address={wallet.address}
+                            variant="badge"
+                            showCopy
+                            showExternalLink
+                            network="sepolia"
+                          />
                           {wallet.isPrimary && (
                             <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-medium">
                               Primary
                             </span>
                           )}
                         </div>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-gray-400 text-sm mt-1">
                           Added {new Date(wallet.createdAt).toLocaleDateString()}
                         </p>
                       </div>

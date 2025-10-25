@@ -6,8 +6,9 @@ import { User, Wallet, Settings, LogOut, Plus, Copy, Check, ChevronDown } from "
 import { useAuth } from "@/contexts/AuthContext";
 import { signOutUser } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { connectWallet, getAccount, formatAddress } from "@/lib/ethersClient";
-import { getDisplayName } from "@/lib/ensClient";
+import { connectWallet, getAccount } from "@/lib/ethersClient";
+import { useENS, useENSBatch } from "@/hooks/useENS";
+import ENSAddress from "./ENSAddress";
 
 interface LinkedWallet {
   id: string;
@@ -24,29 +25,26 @@ export default function UnifiedAccountBadge() {
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [loadingWallets, setLoadingWallets] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-  const [ensName, setEnsName] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get primary wallet or connected wallet for display
+  const primaryWallet = wallets.find(w => w.isPrimary);
+  const displayWallet = connectedWallet || primaryWallet?.address || '';
+  
+  // Use ENS hook for the display wallet
+  const { displayName: ensName, isLoading: ensLoading } = useENS(displayWallet);
+  
+  // Batch resolve ENS for all linked wallets
+  const walletAddresses = wallets.map(w => w.address);
+  const walletsENSMap = useENSBatch(walletAddresses);
 
   useEffect(() => {
     if (user) {
       loadWallets();
       checkConnectedWallet();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  // Resolve ENS name for connected/primary wallet
-  useEffect(() => {
-    const primaryWallet = wallets.find(w => w.isPrimary);
-    const displayWallet = connectedWallet || primaryWallet?.address;
-    
-    if (displayWallet) {
-      getDisplayName(displayWallet).then(name => {
-        setEnsName(name);
-      });
-    } else {
-      setEnsName(null);
-    }
-  }, [connectedWallet, wallets]);
 
   // Listen for MetaMask account changes
   useEffect(() => {
@@ -179,13 +177,13 @@ export default function UnifiedAccountBadge() {
       await signOutUser();
       setIsOpen(false);
       router.push("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
+    } catch (err) {
+      console.error("Error signing out:", err);
     }
   };
 
-  const primaryWallet = wallets.find(w => w.isPrimary);
-  const displayWallet = connectedWallet || primaryWallet?.address;
+  const renderPrimaryWallet = wallets.find(w => w.isPrimary);
+  const renderDisplayWallet = connectedWallet || renderPrimaryWallet?.address;
   const isWalletActive = !!connectedWallet; // True if MetaMask is actively connected
 
   return (
@@ -224,10 +222,10 @@ export default function UnifiedAccountBadge() {
           <span className="text-white font-semibold text-sm">
             {user?.displayName || "User"}
           </span>
-          {displayWallet ? (
+          {renderDisplayWallet ? (
             <span className={`text-xs font-mono flex items-center gap-1 ${isWalletActive ? 'text-teal-300' : 'text-gray-400'}`}>
               <Wallet className="w-3 h-3" />
-              {ensName || formatAddress(displayWallet)}
+              {ensName}
               {!isWalletActive && <span className="text-[10px] text-gray-500 ml-1">(Linked)</span>}
             </span>
           ) : (
@@ -287,13 +285,13 @@ export default function UnifiedAccountBadge() {
                 )}
               </div>
 
-              {displayWallet ? (
+              {renderDisplayWallet ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 group hover:border-teal-500/30 transition-all">
                     <div className="flex items-center gap-2 flex-1">
                       <Wallet className={`w-4 h-4 ${isWalletActive ? 'text-teal-400' : 'text-gray-400'}`} />
                       <span className="font-mono text-white text-sm">
-                        {ensName || formatAddress(displayWallet)}
+                        {ensName}
                       </span>
                       {!isWalletActive && (
                         <span className="text-xs text-gray-500 px-2 py-0.5 rounded-full bg-gray-800/50">
@@ -343,11 +341,15 @@ export default function UnifiedAccountBadge() {
                     .map((wallet) => (
                       <div
                         key={wallet.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-sm"
+                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-sm group"
                       >
-                        <span className="font-mono text-gray-300 text-xs">
-                          {formatAddress(wallet.address)}
-                        </span>
+                        <ENSAddress 
+                          address={wallet.address}
+                          variant="compact"
+                          showCopy
+                          network="sepolia"
+                          maxLength={15}
+                        />
                         {wallet.isPrimary && (
                           <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-xs">
                             Primary
