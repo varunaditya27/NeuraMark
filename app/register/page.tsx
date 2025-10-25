@@ -24,7 +24,7 @@ export default function RegisterPage() {
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
   const [modelInfo, setModelInfo] = useState("");
-  const [outputType, setOutputType] = useState<"text" | "image">("text");
+  const [outputType, setOutputType] = useState<"text" | "image" | "code">("text");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -124,6 +124,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (outputType === "code" && !output.trim()) {
+      setError("Please enter the AI-generated code");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -137,7 +142,7 @@ export default function RegisterPage() {
       const promptHash = hashText(prompt);
       let outputHash: string;
       
-      if (outputType === "text") {
+      if (outputType === "text" || outputType === "code") {
         outputHash = hashText(output);
       } else {
         // For images, hash the file content using the same method as text
@@ -157,14 +162,14 @@ export default function RegisterPage() {
       
       let uploadResponse: Response;
       
-      if (outputType === "text") {
+      if (outputType === "text" || outputType === "code") {
         uploadResponse = await fetch("/api/register-proof", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             prompt,
             output,
-            outputType: "text",
+            outputType,
             modelInfo,
             promptHash,
             outputHash,
@@ -420,7 +425,7 @@ export default function RegisterPage() {
                   <label className="block text-sm font-medium text-gray-300 mb-3">
                     AI Output Type <span className="text-red-400">*</span>
                   </label>
-                  <div className="flex gap-3 mb-4">
+                  <div className="grid grid-cols-3 gap-3 mb-4">
                     <button
                       type="button"
                       onClick={() => {
@@ -428,7 +433,7 @@ export default function RegisterPage() {
                         removeImage();
                       }}
                       disabled={loading}
-                      className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+                      className={`px-4 py-3 rounded-xl font-medium transition-all ${
                         outputType === "text"
                           ? "bg-indigo-500/20 border-2 border-indigo-500 text-indigo-300"
                           : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/20"
@@ -443,13 +448,28 @@ export default function RegisterPage() {
                         setOutput("");
                       }}
                       disabled={loading}
-                      className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+                      className={`px-4 py-3 rounded-xl font-medium transition-all ${
                         outputType === "image"
                           ? "bg-indigo-500/20 border-2 border-indigo-500 text-indigo-300"
                           : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/20"
                       }`}
                     >
                       🖼️ Image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOutputType("code");
+                        removeImage();
+                      }}
+                      disabled={loading}
+                      className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                        outputType === "code"
+                          ? "bg-indigo-500/20 border-2 border-indigo-500 text-indigo-300"
+                          : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/20"
+                      }`}
+                    >
+                      💻 Code
                     </button>
                   </div>
                 </div>
@@ -514,6 +534,27 @@ export default function RegisterPage() {
                         </button>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Code Output Input */}
+                {outputType === "code" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      AI-Generated Code <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      value={output}
+                      onChange={(e) => setOutput(e.target.value)}
+                      placeholder="Paste the AI-generated code here..."
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none font-mono text-sm"
+                      rows={12}
+                      disabled={loading}
+                      spellCheck={false}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Tip: Code will be displayed with monospace font for better readability
+                    </p>
                   </div>
                 )}
 

@@ -12,9 +12,11 @@ import { motion } from "framer-motion";
 import { 
   Shield, 
   TrendingUp, 
-  Sparkles, 
   Database,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Image as ImageIcon,
+  Code
 } from "lucide-react";
 import ExplorerSearchBar from "@/components/ExplorerSearchBar";
 import ExplorerProofTable from "@/components/ExplorerProofTable";
@@ -207,7 +209,7 @@ export default function ExplorerPage() {
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-blue-500/20">
-                <Sparkles className="h-6 w-6 text-blue-400" />
+                <FileText className="h-6 w-6 text-blue-400" />
               </div>
             </div>
           </GlassmorphicCard>
@@ -222,7 +224,7 @@ export default function ExplorerPage() {
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-purple-500/20">
-                <Sparkles className="h-6 w-6 text-purple-400" />
+                <ImageIcon className="h-6 w-6 text-purple-400" />
               </div>
             </div>
           </GlassmorphicCard>
@@ -237,7 +239,7 @@ export default function ExplorerPage() {
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-green-500/20">
-                <TrendingUp className="h-6 w-6 text-green-400" />
+                <Code className="h-6 w-6 text-green-400" />
               </div>
             </div>
           </GlassmorphicCard>
