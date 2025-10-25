@@ -1,190 +1,49 @@
-# NeuraMark - Blockchain Backend# Sample Hardhat 3 Beta Project (`node:test` and `viem`)
+# NeuraMark Blockchain Backend
 
+This document provides a comprehensive overview of the blockchain infrastructure for the NeuraMark proof-of-authorship verification system.
 
+## Overview
 
-Complete blockchain infrastructure for the NeuraMark proof-of-prompt authorship verification system.This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
+The NeuraMark blockchain backend consists of two smart contracts deployed on the Ethereum Sepolia testnet. These contracts are responsible for the immutable, on-chain storage of AI content proof metadata.
 
+-   **`NeuraMark.sol`**: The main smart contract for registering and verifying proofs.
+-   **`AuthorshipToken.sol`**: An ERC-721 contract for minting soulbound NFT certificates of authorship.
 
+## For Users
 
-## 🏗️ ArchitectureTo learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+As a user of the NeuraMark platform, you don't need to interact directly with the smart contracts. All blockchain interactions are handled for you by the NeuraMark web application. When you register a proof, you will be prompted to sign a transaction with your MetaMask wallet, which will record the proof on the blockchain.
 
+## For Developers
 
+This section provides a technical deep-dive into the smart contracts, their functions, and how to interact with them from a client-side application.
 
-### Smart Contract## Project Overview
+### Contract Interaction Flow
 
-- **Contract Name**: `NeuraMark.sol`
+The following diagram illustrates the typical flow of interaction between a client, the `NeuraMark` contract, and the `AuthorshipToken` contract during the proof registration process.
 
-- **Version**: Solidity ^0.8.20This example project includes:
+```mermaid
+sequenceDiagram
+    participant Client as Client (Ethers.js)
+    participant NeuraMark as NeuraMark.sol
+    participant AuthorshipToken as AuthorshipToken.sol
 
-- **Network**: Sepolia Testnet (Ethereum)
-
-- **Purpose**: Immutable on-chain storage of AI content proof metadata- A simple Hardhat configuration file.
-
-- Foundry-compatible Solidity unit tests.
-
-### Tech Stack- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
-
-- **Blockchain Framework**: Hardhat v3.0+- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
-
-- **Web3 Library**: Ethers.js v6 + Viem
-
-- **Storage**: IPFS (via Pinata)## Usage
-
-- **Database**: Supabase PostgreSQL + Prisma ORM
-
-- **Testing**: Node.js Test Runner + Hardhat Viem### Running Tests
-
-
-
----To run all the tests in the project, execute the following command:
-
-
-
-## 📁 Project Structure```shell
-
-npx hardhat test
-
-``````
-
-hardhat-example/
-
-├── contracts/You can also selectively run the Solidity or `node:test` tests:
-
-│   ├── NeuraMark.sol          # Main smart contract
-
-│   └── Counter.sol             # Example contract```shell
-
-├── test/npx hardhat test solidity
-
-│   ├── NeuraMark.ts            # Contract testsnpx hardhat test nodejs
-
-│   └── Counter.ts              # Example tests```
-
-├── scripts/
-
-│   └── deploy.ts               # Deployment script### Make a deployment to Sepolia
-
-├── ignition/
-
-│   └── modules/This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
-
-│       └── NeuraMark.ts        # Hardhat Ignition module
-
-├── lib/To run the deployment to a local chain:
-
-│   ├── ethersClient.ts         # Frontend Web3 utilities
-
-│   ├── pinata.ts               # IPFS upload utilities```shell
-
-│   └── prisma.ts               # Database utilitiesnpx hardhat ignition deploy ignition/modules/Counter.ts
-
-├── prisma/```
-
-│   └── schema.prisma           # Database schema
-
-├── hardhat.config.ts           # Hardhat configurationTo run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
-
-├── .env                        # Environment variables
-
-└── README.md                   # This fileYou can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
+    Client->>NeuraMark: registerProof(promptHash, outputHash, ...)
+    activate NeuraMark
+    NeuraMark->>NeuraMark: Generates proofId
+    NeuraMark->>NeuraMark: Stores Proof struct
+    NeuraMark->>AuthorshipToken: mintAuthorshipToken(to, promptHash, ...)
+    activate AuthorshipToken
+    AuthorshipToken-->>NeuraMark: returns tokenId
+    deactivate AuthorshipToken
+    NeuraMark-->>Client: returns proofId
+    deactivate NeuraMark
 ```
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+### Smart Contract API: `NeuraMark.sol`
 
----
+#### Struct: `Proof`
 
-```shell
-
-## 🚀 Quick Startnpx hardhat keystore set SEPOLIA_PRIVATE_KEY
-
-```
-
-### 1. Install Dependencies
-
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```bash
-
-cd hardhat-example```shell
-
-npm installnpx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-
-``````
-
-
-### 2. Setup Environment Variables
-
-Create a `.env` file:
-
-```env
-# Sepolia Network
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-SEPOLIA_PRIVATE_KEY=your_private_key_here
-
-# IPFS (Pinata)
-PINATA_API_KEY=your_pinata_api_key
-PINATA_SECRET_API_KEY=your_pinata_secret_key
-# OR use JWT (recommended)
-PINATA_JWT=your_pinata_jwt_token
-
-# Supabase Database
-SUPABASE_DB_URL=postgresql://user:password@host:port/database
-
-# Etherscan (for contract verification)
-ETHERSCAN_API_KEY=your_etherscan_api_key
-
-# Contract Address (auto-populated after deployment)
-NEXT_PUBLIC_CONTRACT_ADDRESS=
-```
-
-### 3. Compile Contracts
-
-```bash
-npx hardhat compile
-```
-
-### 4. Run Tests
-
-```bash
-# Run all tests
-npx hardhat test
-
-# Run only NeuraMark tests
-npx hardhat test test/NeuraMark.ts
-
-# Run only Node.js tests
-npx hardhat test nodejs
-```
-
-### 5. Deploy to Sepolia
-
-```bash
-# Using Hardhat Ignition
-npx hardhat ignition deploy ignition/modules/NeuraMark.ts --network sepolia
-
-# OR using the deploy script
-npx ts-node scripts/deploy.ts
-```
-
-### 6. Initialize Prisma Database
-
-```bash
-# Generate Prisma client
-npx prisma generate
-
-# Run migrations
-npx prisma migrate dev --name init
-
-# Open Prisma Studio (DB GUI)
-npx prisma studio
-```
-
----
-
-## 📜 Smart Contract API
-
-### Struct: Proof
+This struct defines the data structure for a proof stored on the blockchain.
 
 ```solidity
 struct Proof {
@@ -198,9 +57,12 @@ struct Proof {
 }
 ```
 
-### Functions
+#### Functions
 
-#### `registerProof`
+##### `registerProof`
+
+Registers a new proof on-chain and triggers the minting of a corresponding soulbound NFT.
+
 ```solidity
 function registerProof(
     string memory promptHash,
@@ -210,269 +72,113 @@ function registerProof(
     string memory outputCID
 ) public returns (bytes32)
 ```
-Registers a new proof on-chain. Returns the unique `proofId`.
 
-**Requirements:**
-- All parameters must be non-empty
-- Proof must not already exist
+-   **Parameters**:
+    -   `promptHash`: The SHA-256 hash of the AI prompt.
+    -   `outputHash`: The SHA-256 hash of the AI output.
+    -   `modelInfo`: A string describing the AI model used.
+    -   `promptCID`: The IPFS Content Identifier for the prompt.
+    -   `outputCID`: The IPFS Content Identifier for the output.
+-   **Returns**: The unique `proofId` (a `bytes32` value).
+-   **Emits**: `ProofRegistered(bytes32 proofId, address creator, uint256 timestamp)`
 
-**Emits:** `ProofRegistered` event
+##### `verifyProof`
 
----
+Retrieves the details of a proof by its `proofId`.
 
-#### `verifyProof`
 ```solidity
 function verifyProof(bytes32 proofId) public view returns (Proof memory)
 ```
-Retrieves proof details by `proofId`.
 
-**Reverts:** If proof doesn't exist
+-   **Parameters**:
+    -   `proofId`: The unique ID of the proof to retrieve.
+-   **Returns**: A `Proof` struct containing the proof's details.
+-   **Reverts**: If a proof with the given `proofId` does not exist.
 
----
+##### `isProofRegistered`
 
-#### `getProofId`
-```solidity
-function getProofId(
-    string memory promptHash,
-    string memory outputHash,
-    address creator
-) public pure returns (bytes32)
-```
-Calculates the unique proof ID for given parameters.
+Checks if a proof with a given `proofId` has been registered.
 
----
-
-#### `isProofRegistered`
 ```solidity
 function isProofRegistered(bytes32 proofId) public view returns (bool)
 ```
-Checks if a proof exists.
 
----
+-   **Parameters**:
+    -   `proofId`: The unique ID of the proof to check.
+-   **Returns**: `true` if the proof exists, `false` otherwise.
 
-#### `getProofByHashes`
-```solidity
-function getProofByHashes(
-    string memory promptHash,
-    string memory outputHash,
-    address creator
-) public view returns (Proof memory)
-```
-Retrieves proof by providing hashes and creator address.
+### Client-Side Interaction (`ethers.js`)
 
----
+Here are some examples of how to interact with the `NeuraMark` contract from a JavaScript/TypeScript application using `ethers.js`.
 
-## 🔧 Utility Libraries
+#### Connecting to the Contract
 
-### `lib/ethersClient.ts`
+```javascript
+import { ethers } from 'ethers';
+import NeuraMarkAbi from './NeuraMark.json';
 
-Frontend utilities for interacting with the smart contract via MetaMask.
-
-```typescript
-import { connectWallet, registerProof, verifyProof } from './lib/ethersClient';
-
-// Connect wallet
-const address = await connectWallet();
-
-// Register proof
-const result = await registerProof(
-  promptHash,
-  outputHash,
-  "GPT-4",
-  "ipfs://QmPrompt...",
-  "ipfs://QmOutput..."
-);
-
-// Verify proof
-const proof = await verifyProof(result.proofId);
+const provider = new ethers.BrowserProvider(window.ethereum);
+const signer = await provider.getSigner();
+const contractAddress = 'YOUR_CONTRACT_ADDRESS';
+const neuraMarkContract = new ethers.Contract(contractAddress, NeuraMarkAbi, signer);
 ```
 
-### `lib/pinata.ts`
+#### Registering a Proof
 
-IPFS utilities for uploading content to Pinata.
-
-```typescript
-import { uploadToIPFS, uploadJSONToIPFS } from './lib/pinata';
-
-// Upload text content
-const cid = await uploadToIPFS("Your prompt text", "prompt.txt");
-
-// Upload JSON data
-const jsonCid = await uploadJSONToIPFS(
-  { prompt: "...", output: "..." },
-  "proof-data.json"
-);
-```
-
-### `lib/prisma.ts`
-
-Database utilities for storing and querying proof metadata.
-
-```typescript
-import { storeProof, getProofById, getProofsByWallet } from './lib/prisma';
-
-// Store proof in database
-await storeProof({
-  proofId: "0x...",
-  wallet: "0x...",
-  modelInfo: "GPT-4",
-  promptHash: "0x...",
-  outputHash: "0x...",
-  promptCID: "ipfs://...",
-  outputCID: "ipfs://...",
-  txHash: "0x...",
-});
-
-// Get all proofs for a wallet
-const proofs = await getProofsByWallet("0x...");
-```
-
----
-
-## 🧪 Testing
-
-### Test Coverage
-
-- ✅ Contract deployment
-- ✅ Proof registration
-- ✅ Event emission
-- ✅ ProofId calculation
-- ✅ Input validation (empty fields)
-- ✅ Duplicate prevention
-- ✅ Proof verification
-- ✅ Multi-user scenarios
-
-### Running Tests
-
-```bash
-# All tests
-npx hardhat test
-
-# Watch mode
-npx hardhat test --watch
-
-# With gas reporting
-REPORT_GAS=true npx hardhat test
-```
-
----
-
-## 🌐 Network Configuration
-
-### Sepolia Testnet
-
-- **Chain ID**: 11155111
-- **RPC URL**: Get from [Alchemy](https://alchemy.com) or [Infura](https://infura.io)
-- **Block Explorer**: https://sepolia.etherscan.io
-- **Faucets**:
-  - https://sepoliafaucet.com
-  - https://faucet.quicknode.com/ethereum/sepolia
-
----
-
-## 🔐 Security Best Practices
-
-1. **Never commit `.env` to version control**
-2. **Use environment variables for all sensitive data**
-3. **Only store hashes and CIDs on-chain, never raw content**
-4. **Validate all user inputs before hashing**
-5. **Use MetaMask for wallet management**
-6. **Encrypt sensitive IPFS content if needed**
-
----
-
-## 📊 Database Schema
-
-```prisma
-model Proof {
-  id          String   @id @default(cuid())
-  proofId     String   @unique
-  wallet      String
-  modelInfo   String
-  promptHash  String
-  outputHash  String
-  promptCID   String
-  outputCID   String
-  txHash      String
-  createdAt   DateTime @default(now())
-
-  @@index([wallet])
-  @@index([proofId])
-  @@index([createdAt])
+```javascript
+async function registerNewProof(promptHash, outputHash, modelInfo, promptCID, outputCID) {
+  try {
+    const tx = await neuraMarkContract.registerProof(
+      promptHash,
+      outputHash,
+      modelInfo,
+      promptCID,
+      outputCID
+    );
+    const receipt = await tx.wait();
+    console.log('Transaction successful:', receipt);
+    // Extract proofId from the event logs
+    const proofId = receipt.logs[0].args[0];
+    return proofId;
+  } catch (error) {
+    console.error('Error registering proof:', error);
+  }
 }
 ```
 
----
+#### Verifying a Proof
 
-## 🎯 Deployment Checklist
+```javascript
+async function verifyExistingProof(proofId) {
+  try {
+    const proof = await neuraMarkContract.verifyProof(proofId);
+    console.log('Proof details:', proof);
+    return proof;
+  } catch (error) {
+    console.error('Error verifying proof:', error);
+  }
+}
+```
 
-- [x] Setup Sepolia RPC URL (Alchemy/Infura)
-- [x] Get Sepolia ETH from faucet
-- [x] Configure MetaMask private key
-- [ ] Setup Pinata API credentials
-- [ ] Configure Supabase database URL
-- [x] Compile contracts
-- [x] Run tests
-- [x] Deploy contract to Sepolia
-- [ ] Verify contract on Etherscan (optional)
-- [ ] Initialize Prisma database
-- [ ] Update frontend with contract address
+### Quick Start
 
----
+1.  **Install Dependencies**: `npm install`
+2.  **Setup Environment Variables**: Create a `.env` file from `.env.example`.
+3.  **Compile Contracts**: `npx hardhat compile`
+4.  **Run Tests**: `npx hardhat test`
+5.  **Deploy to Sepolia**: `npx hardhat ignition deploy ignition/modules/NeuraMark.ts --network sepolia`
 
-## 🛠️ Troubleshooting
+### Project Structure
 
-### Gas Estimation Failed
-- **Cause**: Insufficient Sepolia ETH
-- **Solution**: Get more ETH from a faucet
-
-### Compilation Errors
-- **Cause**: Solidity version mismatch
-- **Solution**: Check `hardhat.config.ts` compiler versions
-
-### Test Failures
-- **Cause**: Network connection issues
-- **Solution**: Check RPC URL and network status
-
-### IPFS Upload Fails
-- **Cause**: Invalid Pinata credentials
-- **Solution**: Verify API keys in `.env`
-
----
-
-## 📚 Additional Resources
-
-- [Hardhat Documentation](https://hardhat.org/docs)
-- [Ethers.js v6 Docs](https://docs.ethers.org/v6/)
-- [Viem Documentation](https://viem.sh)
-- [Pinata IPFS Docs](https://docs.pinata.cloud)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Sepolia Testnet Info](https://sepolia.dev)
-
----
-
-## 📝 License
-
-MIT License - See LICENSE file for details
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Run tests
-4. Submit a pull request
-
----
-
-## 📧 Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check existing documentation
-- Review test files for usage examples
-
----
-
-**Built with ❤️ for the NeuraMark Platform**
+```
+blockchain/
+├── contracts/
+│   ├── NeuraMark.sol
+│   └── AuthorshipToken.sol
+├── test/
+│   └── NeuraMark.ts
+├── ignition/
+│   └── modules/
+│       └── NeuraMark.ts
+└── hardhat.config.ts
+```
