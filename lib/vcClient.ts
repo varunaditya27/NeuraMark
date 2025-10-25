@@ -24,41 +24,43 @@ import { Ed25519Signature2020 } from '@digitalbazaar/ed25519-signature-2020';
 
 /**
  * Custom JSON-LD context for NeuraMark-specific credential terms
+ * Uses the deployed platform's API endpoint for credential schema definitions
+ * Accessible at: https://neura-mark.vercel.app/schemas/credentials
  */
 const NEURAMARK_VC_CONTEXT = {
   '@version': 1.1,
   '@protected': true,
-  AIContentProofCredential: 'https://neuramark.ai/credentials#AIContentProofCredential',
-  AIContentProof: 'https://neuramark.ai/credentials#AIContentProof',
-  promptHash: 'https://neuramark.ai/credentials#promptHash',
-  outputHash: 'https://neuramark.ai/credentials#outputHash',
-  promptCID: 'https://neuramark.ai/credentials#promptCID',
-  outputCID: 'https://neuramark.ai/credentials#outputCID',
-  modelInfo: 'https://neuramark.ai/credentials#modelInfo',
-  outputType: 'https://neuramark.ai/credentials#outputType',
+  AIContentProofCredential: 'https://neura-mark.vercel.app/schemas/credentials#AIContentProofCredential',
+  AIContentProof: 'https://neura-mark.vercel.app/schemas/credentials#AIContentProof',
+  promptHash: 'https://neura-mark.vercel.app/schemas/credentials#promptHash',
+  outputHash: 'https://neura-mark.vercel.app/schemas/credentials#outputHash',
+  promptCID: 'https://neura-mark.vercel.app/schemas/credentials#promptCID',
+  outputCID: 'https://neura-mark.vercel.app/schemas/credentials#outputCID',
+  modelInfo: 'https://neura-mark.vercel.app/schemas/credentials#modelInfo',
+  outputType: 'https://neura-mark.vercel.app/schemas/credentials#outputType',
   name: 'https://schema.org/name',
   blockchainProof: {
-    '@id': 'https://neuramark.ai/credentials#blockchainProof',
+    '@id': 'https://neura-mark.vercel.app/schemas/credentials#blockchainProof',
     '@context': {
       '@version': 1.1,
       '@protected': true,
-      network: 'https://neuramark.ai/credentials#network',
-      contractAddress: 'https://neuramark.ai/credentials#contractAddress',
-      transactionHash: 'https://neuramark.ai/credentials#transactionHash',
-      proofId: 'https://neuramark.ai/credentials#proofId',
+      network: 'https://neura-mark.vercel.app/schemas/credentials#network',
+      contractAddress: 'https://neura-mark.vercel.app/schemas/credentials#contractAddress',
+      transactionHash: 'https://neura-mark.vercel.app/schemas/credentials#transactionHash',
+      proofId: 'https://neura-mark.vercel.app/schemas/credentials#proofId',
       timestamp: {
-        '@id': 'https://neuramark.ai/credentials#timestamp',
+        '@id': 'https://neura-mark.vercel.app/schemas/credentials#timestamp',
         '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
       },
     },
   },
   ipfsMetadata: {
-    '@id': 'https://neuramark.ai/credentials#ipfsMetadata',
+    '@id': 'https://neura-mark.vercel.app/schemas/credentials#ipfsMetadata',
     '@context': {
       '@version': 1.1,
       '@protected': true,
-      promptCID: 'https://neuramark.ai/credentials#promptCID',
-      outputCID: 'https://neuramark.ai/credentials#outputCID',
+      promptCID: 'https://neura-mark.vercel.app/schemas/credentials#promptCID',
+      outputCID: 'https://neura-mark.vercel.app/schemas/credentials#outputCID',
     },
   },
 };
@@ -480,8 +482,8 @@ async function customDocumentLoader(url: string): Promise<{
     };
   }
 
-  // NeuraMark custom schemas - handle any neuramark.com schema URL
-  if (url.startsWith('https://neuramark.com/schemas') || url.startsWith('http://localhost:3000')) {
+  // NeuraMark custom schemas - handle deployed platform schema URLs
+  if (url.startsWith('https://neura-mark.vercel.app/schemas')) {
     return {
       contextUrl: null,
       documentUrl: url,

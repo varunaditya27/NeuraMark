@@ -68,7 +68,7 @@ export async function GET(
     const metadata = {
       name: `NeuraMark Authorship Token #${tokenId}`,
       description: `Immutable proof of authorship for AI-generated ${proofType.toLowerCase()} content. This soulbound NFT certifies that ${proof.user?.displayName || proof.wallet} created AI content using ${proof.modelInfo} on ${formattedDate}.`,
-      external_url: `https://neuramark.com/explorer?tokenId=${tokenId}`,
+      external_url: `https://neura-mark.vercel.app/explorer?tokenId=${tokenId}`,
       image: imageUrl,
       attributes: [
         {
